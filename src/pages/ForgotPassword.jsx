@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import CircleMark from '../components/CircleMark'
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
@@ -27,7 +28,8 @@ export default function ForgotPassword() {
     return (
       <div className="auth-page">
         <div className="auth-card">
-          <h1>🕊️ Check your email</h1>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><CircleMark size={48} /></div>
+          <h1>Check your email</h1>
           <p className="auth-subtitle">
             We sent a password reset link to <strong>{email}</strong>.
           </p>
@@ -42,7 +44,8 @@ export default function ForgotPassword() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1>🕊️ Forgot Password</h1>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><CircleMark size={48} /></div>
+        <h1>Forgot Password</h1>
         <p className="auth-subtitle">We'll email you a reset link.</p>
 
         <form onSubmit={handleReset}>

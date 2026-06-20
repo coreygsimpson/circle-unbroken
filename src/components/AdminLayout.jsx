@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
+import CircleMark from './CircleMark'
 
 export default function AdminLayout() {
   const { profile, isAdmin } = useAuth()
@@ -15,8 +16,8 @@ export default function AdminLayout() {
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <div className="admin-sidebar-header">
-          <span className="admin-logo">🕊️</span>
-          <span>May the Circle Be Unbroken</span>
+          <CircleMark size={28} />
+          <span>May the Circle<br />Be Unbroken</span>
         </div>
 
         <nav className="admin-nav">

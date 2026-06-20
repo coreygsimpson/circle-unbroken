@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import CircleMark from '../components/CircleMark'
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('')
@@ -33,7 +34,8 @@ export default function ResetPassword() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1>🕊️ Set New Password</h1>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><CircleMark size={48} /></div>
+        <h1>Set New Password</h1>
 
         {done ? (
           <p className="auth-subtitle">Password updated! Redirecting to sign in...</p>

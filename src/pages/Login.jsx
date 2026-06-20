@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import CircleMark from '../components/CircleMark'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -25,7 +26,10 @@ export default function Login() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1>🕊️ May the Circle Be Unbroken</h1>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+          <CircleMark size={48} />
+        </div>
+        <h1>May the Circle Be Unbroken</h1>
         <p className="auth-subtitle">Sign in to your account</p>
 
         <form onSubmit={handleLogin}>
