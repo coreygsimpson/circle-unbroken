@@ -4,6 +4,16 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import CircleMark from '../components/CircleMark'
 
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [breakpoint])
+  return isMobile
+}
+
 const TRANSLATIONS = [
   { id: 'kjv',   label: 'KJV',   name: 'King James Version' },
   { id: 'web',   label: 'WEB',   name: 'World English Bible' },
@@ -18,6 +28,8 @@ const SAVE_DELAY_MS = 1200
 export default function StudyViewer() {
   const { id } = useParams()
   const { user } = useAuth()
+  const isMobile = useIsMobile()
+  const [activeTab, setActiveTab] = useState('scripture') // 'scripture' | 'notes'
 
   // ── Study data ──────────────────────────────────────────────
   const [study, setStudy]   = useState(null)
@@ -186,31 +198,136 @@ export default function StudyViewer() {
   if (loading) return <div className="loading-screen">Loading study…</div>
   if (!study)  return <div className="loading-screen">Study not found.</div>
 
-  return (
+  // ── Shared sub-components ──────────────────────────────────────
+  const TranslationBar = ({ compact = false }) => (
     <div style={{
-      display: 'flex', flexDirection: 'column', height: '100vh',
-      background: 'var(--paper)', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
-      overflow: 'hidden',
-      userSelect: (hDragging || vDragging) ? 'none' : 'auto',
+      padding: compact ? '8px 16px' : '10px 20px',
+      borderBottom: '1px solid var(--line)',
+      display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap',
+      flexShrink: 0, background: 'var(--paper)',
     }}>
+      <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-soft)', marginRight: '6px' }}>
+        Translation
+      </span>
+      {TRANSLATIONS.map((t) => {
+        const active = selectedTrans.includes(t.id)
+        return (
+          <button
+            key={t.id}
+            onClick={() => toggleTranslation(t.id)}
+            title={t.name}
+            style={{
+              padding: '4px 11px', border: '1px solid', borderRadius: '100px',
+              fontSize: '0.77rem', fontWeight: 600, cursor: 'pointer',
+              borderColor: active ? 'var(--slate)' : 'var(--line)',
+              background: active ? 'var(--slate)' : 'transparent',
+              color: active ? 'white' : 'var(--ink-soft)',
+              transition: 'all 0.12s',
+            }}
+          >
+            {t.label}
+          </button>
+        )
+      })}
+    </div>
+  )
 
-      {/* ── Top bar ──────────────────────────────────────────── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '16px',
-        padding: '10px 20px', flexShrink: 0,
-        background: 'var(--paper-raised)', borderBottom: '1px solid var(--line)',
-      }}>
-        <CircleMark size={26} />
-
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {study.study_title}
+  const PassageText = () => (
+    <div style={{ flex: 1, overflow: 'auto', padding: '10px 20px 20px', display: 'flex', gap: '24px' }}>
+      {selectedTrans.map((trans) => {
+        const data      = passages[trans]
+        const isLoading = passageLoading[trans]
+        const label     = TRANSLATIONS.find((t) => t.id === trans)?.label
+        return (
+          <div key={trans} style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase',
+              letterSpacing: '0.08em', color: 'var(--slate)',
+              marginBottom: '10px', paddingBottom: '8px',
+              borderBottom: '2px solid var(--slate-light)',
+            }}>
+              {label}
+            </div>
+            {isLoading && <p style={{ color: 'var(--ink-soft)', fontSize: '0.85rem' }}>Loading…</p>}
+            {data?.error && <p style={{ color: 'var(--error)', fontSize: '0.85rem' }}>Could not load this passage.</p>}
+            {data && !data.error && (
+              <div style={{ fontSize: '0.96rem', lineHeight: '1.9', color: 'var(--ink)', fontFamily: 'Georgia, serif' }}>
+                {data.verses?.map((v) => (
+                  <span key={`${v.chapter}-${v.verse}`}>
+                    <sup style={{ fontSize: '0.62em', fontWeight: 700, color: 'var(--gold)', marginRight: '1px', verticalAlign: 'super', lineHeight: 0 }}>
+                      {v.verse}
+                    </sup>
+                    {v.text.trim()}{' '}
+                  </span>
+                ))}
+                {!data.verses && data.text && <span>{data.text}</span>}
+              </div>
+            )}
           </div>
+        )
+      })}
+    </div>
+  )
+
+  const NotesPanel = ({ flex = false }) => (
+    <div style={{ ...(flex ? { flex: 1 } : {}), display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--paper-raised)' }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '8px 20px', borderBottom: '1px solid var(--line)',
+        flexShrink: 0, background: 'var(--paper)',
+      }}>
+        <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-soft)' }}>
+          My Notes
+        </span>
+        {user && saveLabel && (
+          <span style={{ fontSize: '0.75rem', color: saveColor }}>{saveLabel}</span>
+        )}
+        {!user && (
+          <Link to="/login" style={{ fontSize: '0.75rem', color: 'var(--slate)' }}>
+            Sign in to save notes
+          </Link>
+        )}
+      </div>
+      <textarea
+        value={notesContent}
+        onChange={handleNotesChange}
+        placeholder={user
+          ? 'Your notes for this study… they save automatically.'
+          : 'Sign in to save your notes across sessions.'}
+        disabled={!user}
+        style={{
+          flex: 1, resize: 'none', border: 'none', outline: 'none',
+          padding: '16px 20px', fontFamily: 'Georgia, serif',
+          fontSize: '0.94rem', lineHeight: '1.75',
+          color: user ? 'var(--ink)' : 'var(--ink-soft)',
+          background: user ? 'var(--paper-raised)' : 'var(--paper)',
+          cursor: user ? 'text' : 'default',
+        }}
+      />
+    </div>
+  )
+
+  // ── Top bar (shared) ───────────────────────────────────────────
+  const TopBar = () => (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '12px',
+      padding: '10px 16px', flexShrink: 0,
+      background: 'var(--paper-raised)', borderBottom: '1px solid var(--line)',
+    }}>
+      <CircleMark size={isMobile ? 22 : 26} />
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 600, fontSize: isMobile ? '0.88rem' : '0.95rem', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {study.study_title}
+        </div>
+        {!isMobile && (
           <div style={{ fontSize: '0.78rem', color: 'var(--ink-soft)' }}>
             {study.passage_ref}{study.books?.book_name ? ` · ${study.books.book_name}` : ''}{study.week_number ? ` · Week ${study.week_number}` : ''}
           </div>
-        </div>
+        )}
+      </div>
 
+      {!isMobile && (
         <button
           onClick={() => setReaderOpen((o) => !o)}
           style={{
@@ -223,16 +340,97 @@ export default function StudyViewer() {
         >
           {readerOpen ? 'Hide reader' : 'Show reader'}
         </button>
+      )}
 
-        <Link to="/admin/studies" style={{
-          color: 'var(--ink-soft)', textDecoration: 'none', fontSize: '0.82rem',
-          padding: '6px 12px', border: '1px solid var(--line)', borderRadius: '6px', whiteSpace: 'nowrap',
+      <Link to="/admin/studies" style={{
+        color: 'var(--ink-soft)', textDecoration: 'none', fontSize: '0.82rem',
+        padding: '6px 12px', border: '1px solid var(--line)', borderRadius: '6px', whiteSpace: 'nowrap',
+      }}>
+        ← Studies
+      </Link>
+    </div>
+  )
+
+  // ── Mobile layout ──────────────────────────────────────────────
+  if (isMobile) {
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column', height: '100vh',
+        background: 'var(--paper)', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+        overflow: 'hidden',
+      }}>
+        <TopBar />
+
+        {/* Video at top — 16:9 */}
+        <div style={{ width: '100%', aspectRatio: '16/9', flexShrink: 0, background: '#0a0a0a' }}>
+          {study.media_link ? (
+            <iframe
+              src={study.media_link}
+              style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+            />
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(255,255,255,0.35)', fontSize: '0.85rem' }}>
+              No video for this study.
+            </div>
+          )}
+        </div>
+
+        {/* Tab bar */}
+        <div style={{
+          display: 'flex', borderBottom: '1px solid var(--line)', flexShrink: 0,
+          background: 'var(--paper)',
         }}>
-          ← Studies
-        </Link>
-      </div>
+          {[{ id: 'scripture', label: 'Scripture' }, { id: 'notes', label: 'My Notes' }].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                flex: 1, padding: '10px', border: 'none', background: 'none',
+                fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+                color: activeTab === tab.id ? 'var(--slate)' : 'var(--ink-soft)',
+                borderBottom: activeTab === tab.id ? '2px solid var(--slate)' : '2px solid transparent',
+                transition: 'all 0.12s',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-      {/* ── Split pane ───────────────────────────────────────── */}
+        {/* Tab content */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {activeTab === 'scripture' ? (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <TranslationBar compact />
+              {study.passage_ref && (
+                <div style={{ padding: '8px 16px 0', fontSize: '0.82rem', fontWeight: 600, color: 'var(--ink-soft)', flexShrink: 0 }}>
+                  {study.passage_ref}
+                </div>
+              )}
+              <PassageText />
+            </div>
+          ) : (
+            <NotesPanel flex />
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Desktop layout ─────────────────────────────────────────────
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', height: '100vh',
+      background: 'var(--paper)', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+      overflow: 'hidden',
+      userSelect: (hDragging || vDragging) ? 'none' : 'auto',
+    }}>
+
+      <TopBar />
+
+      {/* ── Split pane ─────────────────────────────────────────── */}
       <div
         ref={containerRef}
         style={{
@@ -276,82 +474,15 @@ export default function StudyViewer() {
             style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}
           >
 
-            {/* ── Scripture section ──────────────────────────── */}
+            {/* ── Scripture section ───────────────────────────── */}
             <div style={{ height: `${topPct}%`, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--paper-raised)' }}>
-
-              {/* Translation toggle */}
-              <div style={{
-                padding: '10px 20px', borderBottom: '1px solid var(--line)',
-                display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap',
-                flexShrink: 0, background: 'var(--paper)',
-              }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-soft)', marginRight: '6px' }}>
-                  Translation
-                </span>
-                {TRANSLATIONS.map((t) => {
-                  const active = selectedTrans.includes(t.id)
-                  return (
-                    <button
-                      key={t.id}
-                      onClick={() => toggleTranslation(t.id)}
-                      title={t.name}
-                      style={{
-                        padding: '4px 11px', border: '1px solid', borderRadius: '100px',
-                        fontSize: '0.77rem', fontWeight: 600, cursor: 'pointer',
-                        borderColor: active ? 'var(--slate)' : 'var(--line)',
-                        background: active ? 'var(--slate)' : 'transparent',
-                        color: active ? 'white' : 'var(--ink-soft)',
-                        transition: 'all 0.12s',
-                      }}
-                    >
-                      {t.label}
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Passage reference */}
+              <TranslationBar />
               {study.passage_ref && (
                 <div style={{ padding: '10px 20px 0', fontSize: '0.82rem', fontWeight: 600, color: 'var(--ink-soft)', flexShrink: 0 }}>
                   {study.passage_ref}
                 </div>
               )}
-
-              {/* Passage text — parallel columns */}
-              <div style={{ flex: 1, overflow: 'auto', padding: '10px 20px 20px', display: 'flex', gap: '24px' }}>
-                {selectedTrans.map((trans) => {
-                  const data      = passages[trans]
-                  const isLoading = passageLoading[trans]
-                  const label     = TRANSLATIONS.find((t) => t.id === trans)?.label
-                  return (
-                    <div key={trans} style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase',
-                        letterSpacing: '0.08em', color: 'var(--slate)',
-                        marginBottom: '10px', paddingBottom: '8px',
-                        borderBottom: '2px solid var(--slate-light)',
-                      }}>
-                        {label}
-                      </div>
-                      {isLoading && <p style={{ color: 'var(--ink-soft)', fontSize: '0.85rem' }}>Loading…</p>}
-                      {data?.error && <p style={{ color: 'var(--error)', fontSize: '0.85rem' }}>Could not load this passage.</p>}
-                      {data && !data.error && (
-                        <div style={{ fontSize: '0.96rem', lineHeight: '1.9', color: 'var(--ink)', fontFamily: 'Georgia, serif' }}>
-                          {data.verses?.map((v) => (
-                            <span key={`${v.chapter}-${v.verse}`}>
-                              <sup style={{ fontSize: '0.62em', fontWeight: 700, color: 'var(--gold)', marginRight: '1px', verticalAlign: 'super', lineHeight: 0 }}>
-                                {v.verse}
-                              </sup>
-                              {v.text.trim()}{' '}
-                            </span>
-                          ))}
-                          {!data.verses && data.text && <span>{data.text}</span>}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+              <PassageText />
             </div>
 
             {/* Horizontal drag divider */}
@@ -360,46 +491,8 @@ export default function StudyViewer() {
               style={{ ...dividerStyle(vDragging), height: '5px', cursor: 'row-resize' }}
             />
 
-            {/* ── Notes section ─────────────────────────────── */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--paper-raised)' }}>
-
-              {/* Notes header */}
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '8px 20px', borderBottom: '1px solid var(--line)',
-                flexShrink: 0, background: 'var(--paper)',
-              }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-soft)' }}>
-                  My Notes
-                </span>
-                {user && saveLabel && (
-                  <span style={{ fontSize: '0.75rem', color: saveColor }}>{saveLabel}</span>
-                )}
-                {!user && (
-                  <Link to="/login" style={{ fontSize: '0.75rem', color: 'var(--slate)' }}>
-                    Sign in to save notes
-                  </Link>
-                )}
-              </div>
-
-              {/* Notes textarea */}
-              <textarea
-                value={notesContent}
-                onChange={handleNotesChange}
-                placeholder={user
-                  ? 'Your notes for this study… they save automatically.'
-                  : 'Sign in to save your notes across sessions.'}
-                disabled={!user}
-                style={{
-                  flex: 1, resize: 'none', border: 'none', outline: 'none',
-                  padding: '16px 20px', fontFamily: 'Georgia, serif',
-                  fontSize: '0.94rem', lineHeight: '1.75',
-                  color: user ? 'var(--ink)' : 'var(--ink-soft)',
-                  background: user ? 'var(--paper-raised)' : 'var(--paper)',
-                  cursor: user ? 'text' : 'default',
-                }}
-              />
-            </div>
+            {/* ── Notes section ───────────────────────────────── */}
+            <NotesPanel flex />
 
           </div>
         )}

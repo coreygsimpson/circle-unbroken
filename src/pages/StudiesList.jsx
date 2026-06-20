@@ -45,7 +45,7 @@ export default function StudiesList() {
           <Link to="/admin/studies/new" className="btn-primary">+ New Study</Link>
         </div>
       ) : (
-        <table className="data-table">
+        <div className="table-scroll"><table className="data-table">
           <thead>
             <tr>
               <th>Study ID</th>
@@ -77,7 +77,7 @@ export default function StudiesList() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
     </div>
   )

@@ -49,7 +49,7 @@ export default function UsersList() {
         </div>
       </div>
 
-      <table className="data-table">
+      <div className="table-scroll"><table className="data-table">
         <thead>
           <tr>
             <th>Name</th>
@@ -86,7 +86,7 @@ export default function UsersList() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </div>
   )
 }

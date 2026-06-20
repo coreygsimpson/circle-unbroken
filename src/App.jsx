@@ -13,6 +13,7 @@ import StudyEditor from './pages/StudyEditor'
 import StudyViewer from './pages/StudyViewer'
 import BooksList from './pages/BooksList'
 import UsersList from './pages/UsersList'
+import ProfilePage from './pages/ProfilePage'
 
 import './App.css'
 
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="studies" element={<StudiesList />} />
             <Route path="studies/:id" element={<StudyEditor />} />
             <Route path="books" element={<BooksList />} />
+            <Route path="profile" element={<ProfilePage />} />
             <Route
               path="users"
               element={
