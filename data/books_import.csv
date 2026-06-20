@@ -1,0 +1,67 @@
+book_name,testament,genre,total_chapters,status,book_order
+Genesis,Old Testament,Law,50,In Progress,1
+Exodus,Old Testament,Law,40,In Progress,2
+Leviticus,Old Testament,Law,27,Not Started,3
+Numbers,Old Testament,Law,36,Not Started,4
+Deuteronomy,Old Testament,Law,34,Not Started,5
+Joshua,Old Testament,History,24,Not Started,6
+Judges,Old Testament,History,21,Not Started,7
+Ruth,Old Testament,History,4,Not Started,8
+1 Samuel,Old Testament,History,31,Not Started,9
+2 Samuel,Old Testament,History,24,Not Started,10
+1 Kings,Old Testament,History,22,Not Started,11
+2 Kings,Old Testament,History,25,Not Started,12
+1 Chronicles,Old Testament,History,29,Not Started,13
+2 Chronicles,Old Testament,History,36,Not Started,14
+Ezra,Old Testament,History,10,Not Started,15
+Nehemiah,Old Testament,History,13,Not Started,16
+Esther,Old Testament,History,10,Not Started,17
+Job,Old Testament,Poetry,42,Not Started,18
+Psalms,Old Testament,Poetry,150,Not Started,19
+Proverbs,Old Testament,Poetry,31,Not Started,20
+Ecclesiastes,Old Testament,Poetry,12,Not Started,21
+Song of Solomon,Old Testament,Poetry,8,Not Started,22
+Isaiah,Old Testament,Major Prophecy,66,Not Started,23
+Jeremiah,Old Testament,Major Prophecy,52,Not Started,24
+Lamentations,Old Testament,Major Prophecy,5,Not Started,25
+Ezekiel,Old Testament,Major Prophecy,48,Not Started,26
+Daniel,Old Testament,Major Prophecy,12,Not Started,27
+Hosea,Old Testament,Minor Prophecy,14,Not Started,28
+Joel,Old Testament,Minor Prophecy,3,Not Started,29
+Amos,Old Testament,Minor Prophecy,9,Not Started,30
+Obadiah,Old Testament,Minor Prophecy,1,Not Started,31
+Jonah,Old Testament,Minor Prophecy,4,Not Started,32
+Micah,Old Testament,Minor Prophecy,7,Not Started,33
+Nahum,Old Testament,Minor Prophecy,3,Not Started,34
+Habakkuk,Old Testament,Minor Prophecy,3,Not Started,35
+Zephaniah,Old Testament,Minor Prophecy,3,Not Started,36
+Haggai,Old Testament,Minor Prophecy,2,Not Started,37
+Zechariah,Old Testament,Minor Prophecy,14,Not Started,38
+Malachi,Old Testament,Minor Prophecy,4,Not Started,39
+Matthew,New Testament,Gospel,28,Not Started,40
+Mark,New Testament,Gospel,16,Not Started,41
+Luke,New Testament,Gospel,24,Not Started,42
+John,New Testament,Gospel,21,In Progress,43
+Acts,New Testament,Acts,28,Not Started,44
+Romans,New Testament,Epistle,16,Not Started,45
+1 Corinthians,New Testament,Epistle,16,Not Started,46
+2 Corinthians,New Testament,Epistle,13,Not Started,47
+Galatians,New Testament,Epistle,6,Not Started,48
+Ephesians,New Testament,Epistle,6,Not Started,49
+Philippians,New Testament,Epistle,4,Not Started,50
+Colossians,New Testament,Epistle,4,Not Started,51
+1 Thessalonians,New Testament,Epistle,5,Not Started,52
+2 Thessalonians,New Testament,Epistle,3,Not Started,53
+1 Timothy,New Testament,Epistle,6,Not Started,54
+2 Timothy,New Testament,Epistle,4,Not Started,55
+Titus,New Testament,Epistle,3,Not Started,56
+Philemon,New Testament,Epistle,1,Not Started,57
+Hebrews,New Testament,Epistle,13,Not Started,58
+James,New Testament,Epistle,5,Not Started,59
+1 Peter,New Testament,Epistle,5,Not Started,60
+2 Peter,New Testament,Epistle,3,Not Started,61
+1 John,New Testament,Epistle,5,Not Started,62
+2 John,New Testament,Epistle,1,Not Started,63
+3 John,New Testament,Epistle,1,Not Started,64
+Jude,New Testament,Epistle,1,Not Started,65
+Revelation,New Testament,Apocalyptic,22,Not Started,66
