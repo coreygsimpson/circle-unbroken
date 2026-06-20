@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import VideoUploader from '../components/VideoUploader'
+import AudioUploader from '../components/AudioUploader'
 
 const UNIT_TYPES = ['Chapter', 'Passage', 'Whole Book']
 const STATUSES = ['Draft', 'Ready', 'Published']
@@ -27,14 +29,12 @@ export default function StudyEditor() {
     summary: '',
     status: 'Draft',
     media_link: '',
+    audio_link: '',
+    cf_video_uid: '',
     slides_link: '',
     distribution: ['Personal'],
     week_number: '',
   })
-
-  const [videoFile, setVideoFile] = useState(null)
-  const [slidesFile, setSlidesFile] = useState(null)
-  const [uploadProgress, setUploadProgress] = useState('')
 
   useEffect(() => {
     loadBooks()
@@ -115,7 +115,7 @@ export default function StudyEditor() {
           <h1>{isNew ? 'New Study' : form.study_title || 'Edit Study'}</h1>
           <p className="page-subtitle">Fill in what you have — you can always come back and finish later.</p>
         </div>
-        {!isNew && form.media_link && (
+        {!isNew && (form.media_link || form.audio_link) && (
           <Link to={`/study/${id}`} className="btn-secondary" style={{ alignSelf: 'flex-start' }}>
             View Study →
           </Link>
@@ -208,32 +208,51 @@ export default function StudyEditor() {
 
         <div className="form-section">
           <h2>Media</h2>
+
+          <p className="section-heading" style={{ marginTop: 0 }}>Video</p>
           <p className="form-help">
-            Upload your video to Cloudflare Stream and your PowerPoint to Cloudflare R2, then paste the links here.
-            (Direct upload from this form is coming soon — for now, upload on Cloudflare's dashboard first.)
+            Upload a video file. Cloudflare Stream processes it automatically and extracts an audio track.
+            {!isNew && !form.media_link && ' Save the study first before uploading.'}
           </p>
+          {(isNew && !form.media_link) ? (
+            <div style={{ padding: '12px 14px', borderRadius: '7px', background: 'var(--paper)', border: '1px solid var(--line)', fontSize: '0.84rem', color: 'var(--ink-soft)' }}>
+              Save the study first, then come back to upload video and audio.
+            </div>
+          ) : (
+            <VideoUploader
+              studyTitle={form.study_title}
+              currentMediaLink={form.media_link}
+              onComplete={({ cfVideoUid, mediaLink, audioLink }) => {
+                updateField('cf_video_uid', cfVideoUid)
+                updateField('media_link', mediaLink)
+                if (audioLink) updateField('audio_link', audioLink)
+              }}
+            />
+          )}
 
-          <div className="form-row">
-            <label>
-              Video Link (Cloudflare Stream)
-              <input
-                type="url"
-                value={form.media_link || ''}
-                onChange={(e) => updateField('media_link', e.target.value)}
-                placeholder="https://watch.cloudflarestream.com/..."
-              />
-            </label>
+          <p className="section-heading">Audio only (optional)</p>
+          <p className="form-help">
+            No video yet? Upload an audio file here. It will be playable in the study viewer.
+            Once you upload a full video above, the extracted audio track will replace this.
+          </p>
+          {(isNew && !form.audio_link) ? null : (
+            <AudioUploader
+              studyId={isNew ? null : id}
+              currentAudioLink={form.audio_link}
+              onComplete={({ audioLink }) => updateField('audio_link', audioLink)}
+            />
+          )}
 
-            <label>
-              Slides Link (PowerPoint, R2)
-              <input
-                type="url"
-                value={form.slides_link || ''}
-                onChange={(e) => updateField('slides_link', e.target.value)}
-                placeholder="https://your-r2-bucket.../slides.pptx"
-              />
-            </label>
-          </div>
+          <p className="section-heading">Slides</p>
+          <label>
+            Slides Link (PowerPoint / PDF — R2 or any public URL)
+            <input
+              type="url"
+              value={form.slides_link || ''}
+              onChange={(e) => updateField('slides_link', e.target.value)}
+              placeholder="https://..."
+            />
+          </label>
         </div>
 
         <div className="form-section">
