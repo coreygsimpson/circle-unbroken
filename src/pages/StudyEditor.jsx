@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import VideoUploader from '../components/VideoUploader'
 import AudioUploader from '../components/AudioUploader'
+import SlidesUploader from '../components/SlidesUploader'
 
 const UNIT_TYPES = ['Chapter', 'Passage', 'Whole Book']
 const STATUSES = ['Draft', 'Ready', 'Published']
@@ -244,15 +245,18 @@ export default function StudyEditor() {
           )}
 
           <p className="section-heading">Slides</p>
-          <label>
-            Slides Link (PowerPoint / PDF — R2 or any public URL)
-            <input
-              type="url"
-              value={form.slides_link || ''}
-              onChange={(e) => updateField('slides_link', e.target.value)}
-              placeholder="https://..."
+          <p className="form-help">PowerPoint (.pptx) or PDF.</p>
+          {isNew ? (
+            <div style={{ padding: '12px 14px', borderRadius: '7px', background: 'var(--paper)', border: '1px solid var(--line)', fontSize: '0.84rem', color: 'var(--ink-soft)' }}>
+              Save the study first, then come back to upload slides.
+            </div>
+          ) : (
+            <SlidesUploader
+              studyId={id}
+              currentSlidesLink={form.slides_link}
+              onComplete={({ slidesLink }) => updateField('slides_link', slidesLink)}
             />
-          </label>
+          )}
         </div>
 
         <div className="form-section">
