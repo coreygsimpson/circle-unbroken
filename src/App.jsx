@@ -10,6 +10,7 @@ import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import StudiesList from './pages/StudiesList'
 import StudyEditor from './pages/StudyEditor'
+import StudyViewer from './pages/StudyViewer'
 import BooksList from './pages/BooksList'
 import UsersList from './pages/UsersList'
 
@@ -25,6 +26,14 @@ export default function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route
+            path="/study/:id"
+            element={
+              <ProtectedRoute>
+                <StudyViewer />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/admin"

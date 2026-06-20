@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 const UNIT_TYPES = ['Chapter', 'Passage', 'Whole Book']
@@ -115,6 +115,11 @@ export default function StudyEditor() {
           <h1>{isNew ? 'New Study' : form.study_title || 'Edit Study'}</h1>
           <p className="page-subtitle">Fill in what you have — you can always come back and finish later.</p>
         </div>
+        {!isNew && form.media_link && (
+          <Link to={`/study/${id}`} className="btn-secondary" style={{ alignSelf: 'flex-start' }}>
+            View Study →
+          </Link>
+        )}
       </div>
 
       <form onSubmit={handleSave} className="study-form">

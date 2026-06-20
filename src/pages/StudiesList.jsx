@@ -66,8 +66,11 @@ export default function StudiesList() {
                   <span className={`badge ${STATUS_COLORS[study.status]}`}>{study.status}</span>
                 </td>
                 <td>{study.week_number ?? '—'}</td>
-                <td>
+                <td style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <Link to={`/admin/studies/${study.id}`} className="link-edit">Edit</Link>
+                  {study.media_link && (
+                    <Link to={`/study/${study.id}`} className="link-edit" style={{ color: 'var(--gold-dark)' }}>View</Link>
+                  )}
                 </td>
               </tr>
             ))}

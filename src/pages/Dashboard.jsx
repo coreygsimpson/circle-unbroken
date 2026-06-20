@@ -24,8 +24,8 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1>Welcome, {profile?.full_name?.split(' ')[0] || 'there'} 👋</h1>
-      <p className="page-subtitle">Here's where things stand with the study library.</p>
+      <h1>Study Library</h1>
+      <p className="page-subtitle">Here's where things stand across all 66 books.</p>
 
       <div className="stat-grid">
         <div className="stat-card">
