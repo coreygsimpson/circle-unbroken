@@ -59,10 +59,17 @@ export default function VideoUploader({ studyTitle = 'study-video', onComplete, 
     }
 
     // 2 ── Upload via TUS directly to Cloudflare Stream
+    // Cloudflare's TUS endpoint requires ASCII-only metadata values —
+    // strip anything outside the printable ASCII range to avoid a 400 decode error.
+    const safeFilename = file.name
+      .replace(/[^\x20-\x7E]/g, '')   // drop non-ASCII
+      .replace(/\s+/g, '_')           // spaces → underscores
+      .trim() || 'video'
+
     const upload = new tus.Upload(file, {
       endpoint:    uploadURL,
       retryDelays: [0, 1000, 3000, 5000],
-      metadata:    { filename: file.name, filetype: file.type },
+      metadata:    { filename: safeFilename, filetype: file.type },
       onProgress(bytesUploaded, bytesTotal) {
         setProgress(Math.round((bytesUploaded / bytesTotal) * 100))
       },
