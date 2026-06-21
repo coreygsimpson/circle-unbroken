@@ -15,6 +15,8 @@ import BooksList from './pages/BooksList'
 import BookDetail from './pages/BookDetail'
 import UsersList from './pages/UsersList'
 import ProfilePage from './pages/ProfilePage'
+import SeedsList from './pages/SeedsList'
+import SeedEditor from './pages/SeedEditor'
 
 import './App.css'
 
@@ -54,6 +56,12 @@ export default function App() {
             } />
             <Route path="books" element={<BooksList />} />
             <Route path="books/:id" element={<BookDetail />} />
+            <Route path="seeds" element={<SeedsList />} />
+            <Route path="seeds/:id" element={
+              <ProtectedRoute requireAdmin>
+                <SeedEditor />
+              </ProtectedRoute>
+            } />
             <Route path="profile" element={<ProfilePage />} />
             <Route
               path="users"
