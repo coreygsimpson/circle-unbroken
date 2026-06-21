@@ -75,6 +75,7 @@ export default function AdminLayout() {
           <NavLink to="/admin" end>Dashboard</NavLink>
           <NavLink to="/admin/studies">Studies</NavLink>
           <NavLink to="/admin/books">Books</NavLink>
+          <NavLink to="/admin/tracks">Tracks</NavLink>
           {isAdmin && <NavLink to="/admin/seeds">Seeds</NavLink>}
           {isAdmin && <NavLink to="/admin/users">Users</NavLink>}
           <NavLink to="/admin/profile">Profile</NavLink>

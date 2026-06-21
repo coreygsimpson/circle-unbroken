@@ -17,6 +17,9 @@ import UsersList from './pages/UsersList'
 import ProfilePage from './pages/ProfilePage'
 import SeedsList from './pages/SeedsList'
 import SeedEditor from './pages/SeedEditor'
+import TracksList from './pages/TracksList'
+import TrackEditor from './pages/TrackEditor'
+import TrackDetail from './pages/TrackDetail'
 
 import './App.css'
 
@@ -62,6 +65,13 @@ export default function App() {
                 <SeedEditor />
               </ProtectedRoute>
             } />
+            <Route path="tracks" element={<TracksList />} />
+            <Route path="tracks/:id" element={
+              <ProtectedRoute requireAdmin>
+                <TrackEditor />
+              </ProtectedRoute>
+            } />
+            <Route path="tracks/:id/detail" element={<TrackDetail />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route
               path="users"

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import CircleMark from '../components/CircleMark'
@@ -28,9 +28,33 @@ const SAVE_DELAY_MS = 1200
 
 export default function StudyViewer() {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
+  const trackId  = searchParams.get('track')
+  const trackPos = parseInt(searchParams.get('pos') ?? '-1', 10)
   const { user } = useAuth()
   const isMobile = useIsMobile()
   const [activeTab, setActiveTab] = useState('scripture') // 'scripture' | 'notes' | 'related'
+
+  // ── Track siblings (prev/next) ───────────────────────────────
+  const [trackStudies, setTrackStudies] = useState([]) // ordered study_ids in track
+  const [trackTitle, setTrackTitle]     = useState('')
+
+  useEffect(() => {
+    if (!trackId) return
+    async function loadTrack() {
+      const [{ data: track }, { data: ts }] = await Promise.all([
+        supabase.from('tracks').select('title').eq('id', trackId).single(),
+        supabase
+          .from('track_studies')
+          .select('position, studies(study_id, media_link, audio_link)')
+          .eq('track_id', trackId)
+          .order('position'),
+      ])
+      if (track) setTrackTitle(track.title)
+      if (ts) setTrackStudies(ts.map(row => row.studies))
+    }
+    loadTrack()
+  }, [trackId])
 
   // ── Study data ──────────────────────────────────────────────
   const [study, setStudy]   = useState(null)
@@ -378,11 +402,39 @@ export default function StudyViewer() {
         </button>
       )}
 
-      <Link to="/admin/studies" style={{
+      {/* Track prev/next */}
+      {trackId && trackStudies.length > 0 && (() => {
+        const prev = trackPos > 0 ? trackStudies[trackPos - 1] : null
+        const next = trackPos < trackStudies.length - 1 ? trackStudies[trackPos + 1] : null
+        const canPrev = prev && (prev.media_link || prev.audio_link)
+        const canNext = next && (next.media_link || next.audio_link)
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--ink-soft)', whiteSpace: 'nowrap', maxWidth: isMobile ? '80px' : 'none', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {trackTitle}
+            </span>
+            <Link
+              to={canPrev ? `/study/${prev.study_id}?track=${trackId}&pos=${trackPos - 1}` : '#'}
+              style={{ padding: '5px 10px', border: '1px solid var(--line)', borderRadius: '6px', fontSize: '0.82rem', color: canPrev ? 'var(--slate)' : 'var(--line)', textDecoration: 'none', pointerEvents: canPrev ? 'auto' : 'none' }}
+            >
+              ←
+            </Link>
+            <span style={{ fontSize: '0.75rem', color: 'var(--ink-soft)' }}>{trackPos + 1}/{trackStudies.length}</span>
+            <Link
+              to={canNext ? `/study/${next.study_id}?track=${trackId}&pos=${trackPos + 1}` : '#'}
+              style={{ padding: '5px 10px', border: '1px solid var(--line)', borderRadius: '6px', fontSize: '0.82rem', color: canNext ? 'var(--slate)' : 'var(--line)', textDecoration: 'none', pointerEvents: canNext ? 'auto' : 'none' }}
+            >
+              →
+            </Link>
+          </div>
+        )
+      })()}
+
+      <Link to={trackId ? `/admin/tracks/${trackId}/detail` : '/admin/studies'} style={{
         color: 'var(--ink-soft)', textDecoration: 'none', fontSize: '0.82rem',
         padding: '6px 12px', border: '1px solid var(--line)', borderRadius: '6px', whiteSpace: 'nowrap',
       }}>
-        ← Studies
+        {trackId ? '← Track' : '← Studies'}
       </Link>
     </div>
   )
