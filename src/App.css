@@ -389,6 +389,15 @@ h2 { font-size: 1.05rem; color: var(--ink-soft); margin-top: 0; }
 .book-card-name { font-weight: 600; font-size: 0.92rem; }
 .book-card-meta { font-size: 0.78rem; color: var(--ink-soft); margin: 4px 0 8px; }
 
+.book-card-link {
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.book-card-link:hover {
+  border-color: var(--slate);
+  box-shadow: 0 2px 8px rgba(44, 95, 138, 0.1);
+}
+
 /* ---------- Study form ---------- */
 .study-form {
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;

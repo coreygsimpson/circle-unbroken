@@ -12,6 +12,7 @@ import StudiesList from './pages/StudiesList'
 import StudyEditor from './pages/StudyEditor'
 import StudyViewer from './pages/StudyViewer'
 import BooksList from './pages/BooksList'
+import BookDetail from './pages/BookDetail'
 import UsersList from './pages/UsersList'
 import ProfilePage from './pages/ProfilePage'
 
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="studies" element={<StudiesList />} />
             <Route path="studies/:id" element={<StudyEditor />} />
             <Route path="books" element={<BooksList />} />
+            <Route path="books/:id" element={<BookDetail />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route
               path="users"

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 const STATUS_COLORS = {
@@ -37,22 +38,26 @@ export default function BooksList() {
       <h2 className="section-heading">Old Testament</h2>
       <div className="book-grid">
         {oldTestament.map((b) => (
-          <div key={b.id} className="book-card">
-            <div className="book-card-name">{b.book_name}</div>
-            <div className="book-card-meta">{b.genre} · {b.total_chapters} ch.</div>
-            <span className={`badge ${STATUS_COLORS[b.status]}`}>{b.status}</span>
-          </div>
+          <Link key={b.id} to={`/admin/books/${b.id}`} style={{ textDecoration: 'none' }}>
+            <div className="book-card book-card-link">
+              <div className="book-card-name">{b.book_name}</div>
+              <div className="book-card-meta">{b.genre} · {b.total_chapters} ch.</div>
+              <span className={`badge ${STATUS_COLORS[b.status]}`}>{b.status}</span>
+            </div>
+          </Link>
         ))}
       </div>
 
       <h2 className="section-heading">New Testament</h2>
       <div className="book-grid">
         {newTestament.map((b) => (
-          <div key={b.id} className="book-card">
-            <div className="book-card-name">{b.book_name}</div>
-            <div className="book-card-meta">{b.genre} · {b.total_chapters} ch.</div>
-            <span className={`badge ${STATUS_COLORS[b.status]}`}>{b.status}</span>
-          </div>
+          <Link key={b.id} to={`/admin/books/${b.id}`} style={{ textDecoration: 'none' }}>
+            <div className="book-card book-card-link">
+              <div className="book-card-name">{b.book_name}</div>
+              <div className="book-card-meta">{b.genre} · {b.total_chapters} ch.</div>
+              <span className={`badge ${STATUS_COLORS[b.status]}`}>{b.status}</span>
+            </div>
+          </Link>
         ))}
       </div>
     </div>
