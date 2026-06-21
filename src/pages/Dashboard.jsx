@@ -76,7 +76,7 @@ export default function Dashboard() {
     : false
 
   const greeting = isGuest
-    ? `Welcome${guestLabel && guestLabel !== 'Guest' ? `, ${guestLabel}` : ''}!`
+    ? 'Welcome, Guest!'
     : isNewUser
       ? `Welcome${firstName ? `, ${firstName}` : ''}!`
       : `Welcome back${firstName ? `, ${firstName}` : ''}!`

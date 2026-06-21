@@ -26,7 +26,7 @@ export default function Landing() {
     const { data, error } = await supabase
       .from('guest_codes')
       .select('id, label, track_id')
-      .eq('code', code.trim().toUpperCase())
+      .ilike('code', code.trim())
       .eq('is_active', true)
       .single()
 

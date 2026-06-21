@@ -37,7 +37,7 @@ export default function Login() {
     const { data, error } = await supabase
       .from('guest_codes')
       .select('id, label, track_id')
-      .eq('code', code.trim())
+      .ilike('code', code.trim())
       .eq('is_active', true)
       .single()
 
