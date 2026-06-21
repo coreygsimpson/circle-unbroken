@@ -1,15 +1,15 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import CircleMark from '../components/CircleMark'
 
 export default function Signup() {
+  const navigate = useNavigate()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
 
   async function handleSignup(e) {
     e.preventDefault()
@@ -21,38 +21,29 @@ export default function Signup() {
     }
 
     setLoading(true)
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}/login`,
       },
     })
     setLoading(false)
 
     if (error) {
       setError(error.message)
-    } else {
-      setSubmitted(true)
+      return
     }
-  }
 
-  if (submitted) {
-    return (
-      <div className="auth-page">
-        <div className="auth-card">
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><CircleMark size={48} /></div>
-        <h1>Check your email</h1>
-          <p className="auth-subtitle">
-            We sent a verification link to <strong>{email}</strong>. Click it to activate your account, then come back and sign in.
-          </p>
-          <div className="auth-links">
-            <Link to="/login">Back to sign in</Link>
-          </div>
-        </div>
-      </div>
-    )
+    // If Supabase auto-confirmed the user (email verification disabled),
+    // a session is returned immediately — go straight to the dashboard.
+    if (data.session) {
+      navigate('/admin')
+    } else {
+      // Verification still required — shouldn't happen with current settings
+      // but handle gracefully just in case.
+      setError('Account created — check your email to verify before signing in.')
+    }
   }
 
   return (
