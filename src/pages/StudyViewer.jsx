@@ -377,6 +377,20 @@ export default function StudyViewer() {
           )}
         </div>
 
+        {/* Audio player (mobile) */}
+        {study.audio_link && (
+          <div style={{
+            background: 'var(--paper-raised)', borderBottom: '1px solid var(--line)',
+            padding: '10px 16px', flexShrink: 0,
+            display: 'flex', alignItems: 'center', gap: '10px',
+          }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-soft)', whiteSpace: 'nowrap' }}>
+              Audio only
+            </span>
+            <audio controls src={study.audio_link} style={{ flex: 1, height: '32px', accentColor: 'var(--slate)' }} />
+          </div>
+        )}
+
         {/* Tab bar */}
         <div style={{
           display: 'flex', borderBottom: '1px solid var(--line)', flexShrink: 0,
@@ -455,6 +469,20 @@ export default function StudyViewer() {
           ) : (
             <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.9rem', textAlign: 'center', padding: '40px' }}>
               No video linked for this study.
+            </div>
+          )}
+
+          {/* Audio player (desktop) */}
+          {study.audio_link && (
+            <div style={{
+              padding: '8px 16px', flexShrink: 0,
+              background: 'rgba(0,0,0,0.6)',
+              display: 'flex', alignItems: 'center', gap: '10px',
+            }}>
+              <span style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>
+                Audio only
+              </span>
+              <audio controls src={study.audio_link} style={{ flex: 1, height: '28px', accentColor: '#b59040' }} />
             </div>
           )}
         </div>
