@@ -70,9 +70,22 @@ export default function Dashboard() {
     load()
   }, [isGuest, guestTrackId])
 
+  const firstName = (profile?.display_name || profile?.full_name || '').split(' ')[0]
+  const isNewUser = profile?.created_at
+    ? (Date.now() - new Date(profile.created_at).getTime()) < 1000 * 60 * 60 * 24
+    : false
+
   const greeting = isGuest
     ? `Welcome${guestLabel && guestLabel !== 'Guest' ? `, ${guestLabel}` : ''}!`
-    : `Welcome back${profile?.display_name || profile?.full_name ? `, ${(profile.display_name || profile.full_name).split(' ')[0]}` : ''}!`
+    : isNewUser
+      ? `Welcome${firstName ? `, ${firstName}` : ''}!`
+      : `Welcome back${firstName ? `, ${firstName}` : ''}!`
+
+  const subtitle = isGuest
+    ? "You're browsing as a guest. Create an account to save notes and track your progress."
+    : isNewUser
+      ? 'Your journey through Scripture starts here — Genesis to Revelation, one study at a time.'
+      : 'Pick up where you left off.'
 
   if (loading) return <p>Loading…</p>
 
@@ -82,11 +95,7 @@ export default function Dashboard() {
       {/* ── Greeting ────────────────────────────────────────── */}
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ marginBottom: '6px' }}>{greeting}</h1>
-        <p className="page-subtitle" style={{ margin: 0 }}>
-          {isGuest
-            ? 'You\'re browsing as a guest. Create an account to save notes and track your progress.'
-            : 'Here\'s where things stand across all 66 books.'}
-        </p>
+        <p className="page-subtitle" style={{ margin: 0 }}>{subtitle}</p>
         {isGuest && (
           <Link to="/signup" className="btn-primary" style={{ display: 'inline-block', marginTop: '14px', fontSize: '0.88rem', padding: '8px 18px' }}>
             Create Free Account
