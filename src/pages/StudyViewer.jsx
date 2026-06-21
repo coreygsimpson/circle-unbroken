@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import CircleMark from '../components/CircleMark'
+import CrossReferences from '../components/CrossReferences'
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint)
@@ -29,7 +30,7 @@ export default function StudyViewer() {
   const { id } = useParams()
   const { user } = useAuth()
   const isMobile = useIsMobile()
-  const [activeTab, setActiveTab] = useState('scripture') // 'scripture' | 'notes'
+  const [activeTab, setActiveTab] = useState('scripture') // 'scripture' | 'notes' | 'related'
 
   // ── Study data ──────────────────────────────────────────────
   const [study, setStudy]   = useState(null)
@@ -396,7 +397,7 @@ export default function StudyViewer() {
           display: 'flex', borderBottom: '1px solid var(--line)', flexShrink: 0,
           background: 'var(--paper)',
         }}>
-          {[{ id: 'scripture', label: 'Scripture' }, { id: 'notes', label: 'My Notes' }].map((tab) => (
+          {[{ id: 'scripture', label: 'Scripture' }, { id: 'notes', label: 'My Notes' }, { id: 'related', label: 'Related' }].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -425,8 +426,12 @@ export default function StudyViewer() {
               )}
               <PassageText />
             </div>
-          ) : (
+          ) : activeTab === 'notes' ? (
             <NotesPanel flex />
+          ) : (
+            <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+              <CrossReferences studyDbId={study.id} studyId={study.study_id} readOnly />
+            </div>
           )}
         </div>
       </div>
@@ -521,6 +526,22 @@ export default function StudyViewer() {
 
             {/* ── Notes section ───────────────────────────────── */}
             <NotesPanel flex />
+
+            {/* ── Related Studies (desktop) ────────────────────── */}
+            {study.id && (
+              <div style={{ flexShrink: 0, borderTop: '1px solid var(--line)', background: 'var(--paper)' }}>
+                <div style={{
+                  padding: '8px 20px', borderBottom: '1px solid var(--line)',
+                  fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase',
+                  letterSpacing: '0.07em', color: 'var(--ink-soft)',
+                }}>
+                  Related Studies
+                </div>
+                <div style={{ padding: '12px 20px', maxHeight: '220px', overflowY: 'auto' }}>
+                  <CrossReferences studyDbId={study.id} studyId={study.study_id} readOnly />
+                </div>
+              </div>
+            )}
 
           </div>
         )}

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import VideoUploader from '../components/VideoUploader'
 import AudioUploader from '../components/AudioUploader'
 import SlidesUploader from '../components/SlidesUploader'
+import CrossReferences from '../components/CrossReferences'
 
 const UNIT_TYPES = ['Chapter', 'Passage', 'Whole Book']
 const STATUSES = ['Draft', 'Ready', 'Published']
@@ -295,6 +296,16 @@ export default function StudyEditor() {
             ))}
           </div>
         </div>
+
+        {!isNew && (
+          <div className="form-section">
+            <h2>Cross-References</h2>
+            <p style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', margin: '0 0 14px' }}>
+              Link this study to related studies by theme, prophecy, character, or word study.
+            </p>
+            <CrossReferences studyDbId={id} studyId={form.study_id} />
+          </div>
+        )}
 
         {error && <div className="form-error">{error}</div>}
         {successMsg && <div className="form-success">{successMsg}</div>}
