@@ -57,14 +57,12 @@ export default function VideoUploader({ studyTitle = 'study-video', onComplete, 
       return
     }
 
-    // 2 ── Upload via manual TUS (fetch-based) so we get full error visibility
-    const abortController = new AbortController()
-    uploadRef.current = abortController
-
+    // 2 ── Upload via XHR + FormData
+    // Browsers silently strip Content-Length on fetch(), which breaks CF's TUS
+    // parser. XHR sets it correctly and gives us progress events.
     try {
-      await tusUpload(file, uploadURL, abortController.signal, (pct) => setProgress(pct))
+      await xhrUpload(file, uploadURL, (pct) => setProgress(pct))
     } catch (err) {
-      if (err.name === 'AbortError') return // user cancelled
       setStage('error')
       setErrorMsg(err.message)
       return
@@ -148,55 +146,34 @@ export default function VideoUploader({ studyTitle = 'study-video', onComplete, 
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  // ── Manual TUS upload (chunked PATCH) ──────────────────────
-  async function tusUpload(file, uploadURL, signal, onProgress) {
-    const CHUNK = 50 * 1024 * 1024 // 50 MB chunks
+  // ── XHR FormData upload ─────────────────────────────────────
+  function xhrUpload(file, uploadURL, onProgress) {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData()
+      formData.append('file', file)
 
-    // Step 1: POST to create the upload slot
-    const createRes = await fetch(uploadURL, {
-      method: 'POST',
-      signal,
-      headers: {
-        'Tus-Resumable': '1.0.0',
-        'Upload-Length': String(file.size),
-        'Content-Length': '0',
-      },
-    })
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', uploadURL)
 
-    if (!createRes.ok) {
-      const body = await createRes.text()
-      console.error('CF TUS create failed:', createRes.status, body)
-      throw new Error(`CF Stream rejected the upload (${createRes.status}): ${body}`)
-    }
-
-    // CF returns the actual PATCH destination in Location header
-    const location = createRes.headers.get('Location') || uploadURL
-
-    // Step 2: PATCH file data in chunks
-    let offset = 0
-    while (offset < file.size) {
-      const chunk = file.slice(offset, Math.min(offset + CHUNK, file.size))
-      const patchRes = await fetch(location, {
-        method: 'PATCH',
-        signal,
-        headers: {
-          'Tus-Resumable': '1.0.0',
-          'Upload-Offset': String(offset),
-          'Content-Type': 'application/offset+octet-stream',
-          'Content-Length': String(chunk.size),
-        },
-        body: chunk,
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100))
       })
 
-      if (!patchRes.ok) {
-        const body = await patchRes.text()
-        console.error('CF TUS patch failed:', patchRes.status, body)
-        throw new Error(`Upload failed at byte ${offset} (${patchRes.status}): ${body}`)
-      }
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve()
+        } else {
+          console.error('CF upload failed:', xhr.status, xhr.responseText)
+          reject(new Error(`Upload failed (${xhr.status}): ${xhr.responseText}`))
+        }
+      })
 
-      offset = parseInt(patchRes.headers.get('Upload-Offset') || String(offset + chunk.size), 10)
-      onProgress(Math.round((offset / file.size) * 100))
-    }
+      xhr.addEventListener('error', () => reject(new Error('Network error during upload')))
+      xhr.addEventListener('abort', () => reject(Object.assign(new Error('Aborted'), { name: 'AbortError' })))
+
+      uploadRef.current = { abort: () => xhr.abort() }
+      xhr.send(formData)
+    })
   }
 
   const { label: stageLabel, color: stageColor } = STAGES[stage]
