@@ -65,7 +65,7 @@ export default function StudyViewer() {
       const { data } = await supabase
         .from('studies')
         .select('*, books(book_name)')
-        .eq('id', id)
+        .eq('study_id', id)
         .single()
       setStudy(data)
       setLoading(false)

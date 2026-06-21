@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 
 const STATUS_COLORS = {
   Draft: 'badge-gray',
@@ -9,6 +10,7 @@ const STATUS_COLORS = {
 }
 
 export default function StudiesList() {
+  const { isAdmin } = useAuth()
   const [studies, setStudies] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -34,7 +36,7 @@ export default function StudiesList() {
           <h1>Studies</h1>
           <p className="page-subtitle">All study sessions, across all 66 books.</p>
         </div>
-        <Link to="/admin/studies/new" className="btn-primary">+ New Study</Link>
+        {isAdmin && <Link to="/admin/studies/new" className="btn-primary">+ New Study</Link>}
       </div>
 
       {loading ? (
@@ -42,7 +44,7 @@ export default function StudiesList() {
       ) : studies.length === 0 ? (
         <div className="empty-state">
           <p>No studies yet. Create your first one to get started.</p>
-          <Link to="/admin/studies/new" className="btn-primary">+ New Study</Link>
+          {isAdmin && <Link to="/admin/studies/new" className="btn-primary">+ New Study</Link>}
         </div>
       ) : (
         <div className="table-scroll"><table className="data-table">
@@ -68,9 +70,11 @@ export default function StudiesList() {
                 <td>{study.week_number ?? '—'}</td>
                 <td>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <Link to={`/admin/studies/${study.id}`} className="link-edit">Edit</Link>
-                    {study.media_link && (
-                      <Link to={`/study/${study.id}`} className="link-edit" style={{ color: 'var(--gold-dark)' }}>View</Link>
+                    {isAdmin && (
+                      <Link to={`/admin/studies/${study.id}`} className="link-edit">Edit</Link>
+                    )}
+                    {(study.media_link || study.audio_link) && (
+                      <Link to={`/study/${study.study_id}`} className="link-edit" style={{ color: 'var(--gold-dark)' }}>View</Link>
                     )}
                   </div>
                 </td>

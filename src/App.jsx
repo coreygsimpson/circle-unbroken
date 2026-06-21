@@ -47,7 +47,11 @@ export default function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="studies" element={<StudiesList />} />
-            <Route path="studies/:id" element={<StudyEditor />} />
+            <Route path="studies/:id" element={
+              <ProtectedRoute requireAdmin>
+                <StudyEditor />
+              </ProtectedRoute>
+            } />
             <Route path="books" element={<BooksList />} />
             <Route path="books/:id" element={<BookDetail />} />
             <Route path="profile" element={<ProfilePage />} />
