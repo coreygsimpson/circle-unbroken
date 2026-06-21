@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react'
-import * as tus from 'tus-js-client'
 
 /**
  * VideoUploader
@@ -58,27 +57,21 @@ export default function VideoUploader({ studyTitle = 'study-video', onComplete, 
       return
     }
 
-    // 2 ── Upload via TUS directly to Cloudflare Stream
-    // CF's direct_upload URL is a pre-created slot — use uploadUrl (not endpoint)
-    // so tus-js-client skips the POST creation step and goes straight to PATCH.
-    const upload = new tus.Upload(file, {
-      uploadUrl:   uploadURL,
-      retryDelays: [0, 1000, 3000, 5000],
-      onProgress(bytesUploaded, bytesTotal) {
-        setProgress(Math.round((bytesUploaded / bytesTotal) * 100))
-      },
-      async onSuccess() {
-        setStage('processing')
-        await pollForReady(uid)
-      },
-      onError(err) {
-        setStage('error')
-        setErrorMsg(err.message)
-      },
-    })
+    // 2 ── Upload via manual TUS (fetch-based) so we get full error visibility
+    const abortController = new AbortController()
+    uploadRef.current = abortController
 
-    uploadRef.current = upload
-    upload.start()
+    try {
+      await tusUpload(file, uploadURL, abortController.signal, (pct) => setProgress(pct))
+    } catch (err) {
+      if (err.name === 'AbortError') return // user cancelled
+      setStage('error')
+      setErrorMsg(err.message)
+      return
+    }
+
+    setStage('processing')
+    await pollForReady(uid)
   }
 
   // 3 ── Poll until Cloudflare finishes processing the video
@@ -153,6 +146,57 @@ export default function VideoUploader({ studyTitle = 'study-video', onComplete, 
     setStage('idle')
     setProgress(0)
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  // ── Manual TUS upload (chunked PATCH) ──────────────────────
+  async function tusUpload(file, uploadURL, signal, onProgress) {
+    const CHUNK = 50 * 1024 * 1024 // 50 MB chunks
+
+    // Step 1: POST to create the upload slot
+    const createRes = await fetch(uploadURL, {
+      method: 'POST',
+      signal,
+      headers: {
+        'Tus-Resumable': '1.0.0',
+        'Upload-Length': String(file.size),
+        'Content-Length': '0',
+      },
+    })
+
+    if (!createRes.ok) {
+      const body = await createRes.text()
+      console.error('CF TUS create failed:', createRes.status, body)
+      throw new Error(`CF Stream rejected the upload (${createRes.status}): ${body}`)
+    }
+
+    // CF returns the actual PATCH destination in Location header
+    const location = createRes.headers.get('Location') || uploadURL
+
+    // Step 2: PATCH file data in chunks
+    let offset = 0
+    while (offset < file.size) {
+      const chunk = file.slice(offset, Math.min(offset + CHUNK, file.size))
+      const patchRes = await fetch(location, {
+        method: 'PATCH',
+        signal,
+        headers: {
+          'Tus-Resumable': '1.0.0',
+          'Upload-Offset': String(offset),
+          'Content-Type': 'application/offset+octet-stream',
+          'Content-Length': String(chunk.size),
+        },
+        body: chunk,
+      })
+
+      if (!patchRes.ok) {
+        const body = await patchRes.text()
+        console.error('CF TUS patch failed:', patchRes.status, body)
+        throw new Error(`Upload failed at byte ${offset} (${patchRes.status}): ${body}`)
+      }
+
+      offset = parseInt(patchRes.headers.get('Upload-Offset') || String(offset + chunk.size), 10)
+      onProgress(Math.round((offset / file.size) * 100))
+    }
   }
 
   const { label: stageLabel, color: stageColor } = STAGES[stage]
