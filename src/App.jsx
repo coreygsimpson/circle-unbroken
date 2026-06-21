@@ -20,6 +20,7 @@ import SeedEditor from './pages/SeedEditor'
 import TracksList from './pages/TracksList'
 import TrackEditor from './pages/TrackEditor'
 import TrackDetail from './pages/TrackDetail'
+import GuestCodes from './pages/GuestCodes'
 
 import './App.css'
 
@@ -72,6 +73,11 @@ export default function App() {
               </ProtectedRoute>
             } />
             <Route path="tracks/:id/detail" element={<TrackDetail />} />
+            <Route path="guest-codes" element={
+              <ProtectedRoute requireAdmin>
+                <GuestCodes />
+              </ProtectedRoute>
+            } />
             <Route path="profile" element={<ProfilePage />} />
             <Route
               path="users"
