@@ -59,10 +59,10 @@ export default function VideoUploader({ studyTitle = 'study-video', onComplete, 
     }
 
     // 2 ── Upload via TUS directly to Cloudflare Stream
-    // Do NOT send Upload-Metadata — CF Stream identifies the upload by the
-    // one-time URL token and rejects requests with metadata it can't decode.
+    // CF's direct_upload URL is a pre-created slot — use uploadUrl (not endpoint)
+    // so tus-js-client skips the POST creation step and goes straight to PATCH.
     const upload = new tus.Upload(file, {
-      endpoint:    uploadURL,
+      uploadUrl:   uploadURL,
       retryDelays: [0, 1000, 3000, 5000],
       onProgress(bytesUploaded, bytesTotal) {
         setProgress(Math.round((bytesUploaded / bytesTotal) * 100))
