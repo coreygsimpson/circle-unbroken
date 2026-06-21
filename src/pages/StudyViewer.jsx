@@ -53,6 +53,12 @@ export default function StudyViewer() {
   const [passageLoading, setPassageLoading] = useState({})
   const fetchedRef = useRef(new Set())
 
+  // ── Cross-reference passage panel ────────────────────────────
+  const [xrefStudy, setXrefStudy]       = useState(null) // { study_id, study_title, passage_ref }
+  const [xrefPassages, setXrefPassages] = useState({})
+  const [xrefLoading, setXrefLoading]   = useState({})
+  const xrefFetchedRef = useRef(new Set())
+
   // ── Notes ────────────────────────────────────────────────────
   const [notesContent, setNotesContent] = useState('')
   const [saveStatus, setSaveStatus]     = useState('idle') // idle | saving | saved | error
@@ -132,6 +138,35 @@ export default function StudyViewer() {
       }
     })
   }, [study, selectedTrans])
+
+  // Fetch cross-ref passages when a cross-ref study is selected
+  useEffect(() => {
+    if (!xrefStudy?.passage_ref) return
+    xrefFetchedRef.current = new Set() // reset on new study selection
+    setXrefPassages({})
+    selectedTrans.forEach(async (trans) => {
+      if (xrefFetchedRef.current.has(trans)) return
+      xrefFetchedRef.current.add(trans)
+      setXrefLoading((prev) => ({ ...prev, [trans]: true }))
+      try {
+        const ref = xrefStudy.passage_ref.replace(/\s+/g, '+')
+        const res = await fetch(`https://bible-api.com/${ref}?translation=${trans}`)
+        const data = await res.json()
+        setXrefPassages((prev) => ({ ...prev, [trans]: data }))
+      } catch {
+        setXrefPassages((prev) => ({ ...prev, [trans]: { error: true } }))
+      } finally {
+        setXrefLoading((prev) => ({ ...prev, [trans]: false }))
+      }
+    })
+  }, [xrefStudy, selectedTrans])
+
+  function handleXrefSelect(study) {
+    // Toggle off if same study clicked again
+    setXrefStudy(prev => prev?.study_id === study.study_id ? null : study)
+    setXrefPassages({})
+    xrefFetchedRef.current = new Set()
+  }
 
   // ────────────────────────────────────────────────────────────
   // Drag helpers
@@ -429,8 +464,51 @@ export default function StudyViewer() {
           ) : activeTab === 'notes' ? (
             <NotesPanel flex />
           ) : (
-            <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
-              <CrossReferences studyDbId={study.id} studyId={study.study_id} readOnly />
+            <div style={{ flex: 1, overflow: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <CrossReferences
+                studyDbId={study.id}
+                studyId={study.study_id}
+                readOnly
+                onSelect={handleXrefSelect}
+                selectedId={xrefStudy?.study_id}
+              />
+              {/* Cross-ref passage inline on mobile */}
+              {xrefStudy && (
+                <div style={{ border: '2px solid var(--gold)', borderRadius: '10px', overflow: 'hidden' }}>
+                  <div style={{ padding: '8px 14px', background: '#fdf8ec', borderBottom: '1px solid #e8d49a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--slate)' }}>{xrefStudy.study_title}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--ink-soft)' }}>{xrefStudy.passage_ref}</div>
+                    </div>
+                    <button onClick={() => setXrefStudy(null)} style={{ background: 'none', border: 'none', color: 'var(--ink-soft)', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                  </div>
+                  <div style={{ padding: '12px 14px', maxHeight: '300px', overflowY: 'auto' }}>
+                    {selectedTrans.map((trans) => {
+                      const data = xrefPassages[trans]
+                      const isLoading = xrefLoading[trans]
+                      const label = TRANSLATIONS.find(t => t.id === trans)?.label
+                      return (
+                        <div key={trans} style={{ marginBottom: '16px' }}>
+                          <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--gold-dark)', marginBottom: '6px' }}>{label}</div>
+                          {isLoading && <p style={{ color: 'var(--ink-soft)', fontSize: '0.85rem' }}>Loading…</p>}
+                          {data?.error && <p style={{ color: 'var(--error)', fontSize: '0.85rem' }}>Could not load passage.</p>}
+                          {data && !data.error && (
+                            <div style={{ fontSize: '0.91rem', lineHeight: '1.8', color: 'var(--ink)', fontFamily: 'Georgia, serif' }}>
+                              {data.verses?.map((v) => (
+                                <span key={`${v.chapter}-${v.verse}`}>
+                                  <sup style={{ fontSize: '0.62em', fontWeight: 700, color: 'var(--gold)', marginRight: '1px', verticalAlign: 'super', lineHeight: 0 }}>{v.verse}</sup>
+                                  {v.text.trim()}{' '}
+                                </span>
+                              ))}
+                              {!data.verses && data.text && <span>{data.text}</span>}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -535,10 +613,65 @@ export default function StudyViewer() {
                   fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase',
                   letterSpacing: '0.07em', color: 'var(--ink-soft)',
                 }}>
-                  Related Studies
+                  Related Studies — click to load passage
                 </div>
-                <div style={{ padding: '12px 20px', maxHeight: '220px', overflowY: 'auto' }}>
-                  <CrossReferences studyDbId={study.id} studyId={study.study_id} readOnly />
+                <div style={{ padding: '12px 20px', maxHeight: '180px', overflowY: 'auto' }}>
+                  <CrossReferences
+                    studyDbId={study.id}
+                    studyId={study.study_id}
+                    readOnly
+                    onSelect={handleXrefSelect}
+                    selectedId={xrefStudy?.study_id}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ── Cross-ref passage panel (desktop) ───────────── */}
+            {xrefStudy && (
+              <div style={{ flexShrink: 0, borderTop: '2px solid var(--gold)', background: 'var(--paper-raised)', display: 'flex', flexDirection: 'column', maxHeight: '35%' }}>
+                <div style={{
+                  padding: '8px 20px', borderBottom: '1px solid var(--line)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  flexShrink: 0,
+                }}>
+                  <div>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--slate)' }}>{xrefStudy.study_title}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--ink-soft)', marginLeft: '8px' }}>{xrefStudy.passage_ref}</span>
+                  </div>
+                  <button
+                    onClick={() => setXrefStudy(null)}
+                    style={{ background: 'none', border: 'none', color: 'var(--ink-soft)', cursor: 'pointer', fontSize: '1rem', padding: '0 4px', lineHeight: 1 }}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div style={{ flex: 1, overflow: 'auto', padding: '10px 20px 16px', display: 'flex', gap: '24px' }}>
+                  {selectedTrans.map((trans) => {
+                    const data = xrefPassages[trans]
+                    const isLoading = xrefLoading[trans]
+                    const label = TRANSLATIONS.find(t => t.id === trans)?.label
+                    return (
+                      <div key={trans} style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--gold-dark)', marginBottom: '8px', paddingBottom: '6px', borderBottom: '2px solid #e8d49a' }}>
+                          {label}
+                        </div>
+                        {isLoading && <p style={{ color: 'var(--ink-soft)', fontSize: '0.85rem' }}>Loading…</p>}
+                        {data?.error && <p style={{ color: 'var(--error)', fontSize: '0.85rem' }}>Could not load passage.</p>}
+                        {data && !data.error && (
+                          <div style={{ fontSize: '0.93rem', lineHeight: '1.85', color: 'var(--ink)', fontFamily: 'Georgia, serif' }}>
+                            {data.verses?.map((v) => (
+                              <span key={`${v.chapter}-${v.verse}`}>
+                                <sup style={{ fontSize: '0.62em', fontWeight: 700, color: 'var(--gold)', marginRight: '1px', verticalAlign: 'super', lineHeight: 0 }}>{v.verse}</sup>
+                                {v.text.trim()}{' '}
+                              </span>
+                            ))}
+                            {!data.verses && data.text && <span>{data.text}</span>}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}

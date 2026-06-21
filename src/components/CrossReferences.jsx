@@ -19,8 +19,10 @@ const LINK_TYPE_COLORS = {
  *   studyDbId   — the UUID `id` of the study (for DB queries)
  *   studyId     — the human-readable study_id (e.g. JHN-01-A) for display
  *   readOnly    — if true, only show existing refs (no add/remove)
+ *   onSelect    — called with { study_id, study_title, passage_ref } when a ref is clicked in readOnly mode
+ *   selectedId  — study_id of the currently loaded cross-ref (highlights the active card)
  */
-export default function CrossReferences({ studyDbId, studyId, readOnly = false }) {
+export default function CrossReferences({ studyDbId, studyId, readOnly = false, onSelect, selectedId }) {
   const { isAdmin } = useAuth()
   const canEdit = isAdmin && !readOnly
 
@@ -132,14 +134,24 @@ export default function CrossReferences({ studyDbId, studyId, readOnly = false }
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: canEdit ? '16px' : '0' }}>
           {refs.map(ref => {
             const colors = LINK_TYPE_COLORS[ref.link_type] || LINK_TYPE_COLORS.Thematic
+            const isActive = selectedId && ref.study?.study_id === selectedId
+            const clickable = readOnly && onSelect && ref.study?.passage_ref
             return (
-              <div key={ref.id} style={{
-                display: 'flex', alignItems: 'flex-start', gap: '12px',
-                padding: '12px 14px',
-                background: 'var(--paper-raised)',
-                border: '1px solid var(--line)',
-                borderRadius: '8px',
-              }}>
+              <div
+                key={ref.id}
+                onClick={clickable ? () => onSelect(ref.study) : undefined}
+                style={{
+                  display: 'flex', alignItems: 'flex-start', gap: '12px',
+                  padding: '12px 14px',
+                  background: isActive ? 'var(--slate-light)' : 'var(--paper-raised)',
+                  border: `1px solid ${isActive ? 'var(--slate)' : 'var(--line)'}`,
+                  borderRadius: '8px',
+                  cursor: clickable ? 'pointer' : 'default',
+                  transition: 'border-color 0.15s, background 0.15s',
+                }}
+                onMouseEnter={e => { if (clickable && !isActive) e.currentTarget.style.borderColor = 'var(--slate)' }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.borderColor = 'var(--line)' }}
+              >
                 {/* Link type badge */}
                 <span style={{
                   padding: '3px 10px', borderRadius: '100px', flexShrink: 0,
