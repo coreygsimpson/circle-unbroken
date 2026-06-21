@@ -367,115 +367,146 @@ export default function StudyViewer() {
     </div>
   )
 
+  // ── Track nav helper ──────────────────────────────────────────
+  const TrackNav = () => {
+    if (!trackId || trackStudies.length === 0) return null
+    const prev = trackPos > 0 ? trackStudies[trackPos - 1] : null
+    const next = trackPos < trackStudies.length - 1 ? trackStudies[trackPos + 1] : null
+    const canPrev = prev && (prev.media_link || prev.audio_link)
+    const canNext = next && (next.media_link || next.audio_link)
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+        {!isMobile && (
+          <span style={{ fontSize: '0.72rem', color: 'var(--ink-soft)', whiteSpace: 'nowrap', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {trackTitle}
+          </span>
+        )}
+        <Link
+          to={canPrev ? `/study/${prev.study_id}?track=${trackId}&pos=${trackPos - 1}` : '#'}
+          style={{ padding: '5px 10px', border: '1px solid var(--line)', borderRadius: '6px', fontSize: '0.82rem', color: canPrev ? 'var(--slate)' : 'var(--line)', textDecoration: 'none', pointerEvents: canPrev ? 'auto' : 'none' }}
+        >
+          ←
+        </Link>
+        <span style={{ fontSize: '0.75rem', color: 'var(--ink-soft)', whiteSpace: 'nowrap' }}>{trackPos + 1}/{trackStudies.length}</span>
+        <Link
+          to={canNext ? `/study/${next.study_id}?track=${trackId}&pos=${trackPos + 1}` : '#'}
+          style={{ padding: '5px 10px', border: '1px solid var(--line)', borderRadius: '6px', fontSize: '0.82rem', color: canNext ? 'var(--slate)' : 'var(--line)', textDecoration: 'none', pointerEvents: canNext ? 'auto' : 'none' }}
+        >
+          →
+        </Link>
+      </div>
+    )
+  }
+
   // ── Top bar (shared) ───────────────────────────────────────────
   const TopBar = () => (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: '12px',
-      padding: '10px 16px', flexShrink: 0,
-      background: 'var(--paper-raised)', borderBottom: '1px solid var(--line)',
-    }}>
-      <CircleMark size={isMobile ? 22 : 26} />
+    <div style={{ flexShrink: 0, background: 'var(--paper-raised)', borderBottom: '1px solid var(--line)' }}>
+      {/* Main row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px' }}>
+        <Link to={trackId ? `/admin/tracks/${trackId}/detail` : '/admin/studies'} style={{
+          color: 'var(--ink-soft)', textDecoration: 'none', fontSize: '0.82rem',
+          padding: '5px 10px', border: '1px solid var(--line)', borderRadius: '6px', whiteSpace: 'nowrap', flexShrink: 0,
+        }}>
+          {trackId ? '← Track' : '← Studies'}
+        </Link>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, fontSize: isMobile ? '0.88rem' : '0.95rem', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {study.study_title}
-        </div>
-        {!isMobile && (
-          <div style={{ fontSize: '0.78rem', color: 'var(--ink-soft)' }}>
-            {study.passage_ref}{study.books?.book_name ? ` · ${study.books.book_name}` : ''}{study.week_number ? ` · Week ${study.week_number}` : ''}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: isMobile ? '0.88rem' : '0.95rem', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {study.study_title}
           </div>
+          {!isMobile && (
+            <div style={{ fontSize: '0.78rem', color: 'var(--ink-soft)' }}>
+              {study.passage_ref}{study.books?.book_name ? ` · ${study.books.book_name}` : ''}{study.week_number ? ` · Week ${study.week_number}` : ''}
+            </div>
+          )}
+        </div>
+
+        {!isMobile && (
+          <button
+            onClick={() => setReaderOpen((o) => !o)}
+            style={{
+              background: readerOpen ? 'var(--slate-light)' : 'var(--paper)',
+              border: '1px solid var(--line)',
+              color: readerOpen ? 'var(--slate)' : 'var(--ink-soft)',
+              padding: '6px 14px', borderRadius: '6px', fontSize: '0.82rem',
+              fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
+            }}
+          >
+            {readerOpen ? 'Hide reader' : 'Show reader'}
+          </button>
         )}
+
+        {!isMobile && <TrackNav />}
       </div>
 
-      {!isMobile && (
-        <button
-          onClick={() => setReaderOpen((o) => !o)}
-          style={{
-            background: readerOpen ? 'var(--slate-light)' : 'var(--paper)',
-            border: '1px solid var(--line)',
-            color: readerOpen ? 'var(--slate)' : 'var(--ink-soft)',
-            padding: '6px 14px', borderRadius: '6px', fontSize: '0.82rem',
-            fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
-          }}
-        >
-          {readerOpen ? 'Hide reader' : 'Show reader'}
-        </button>
+      {/* Mobile: track nav in its own row */}
+      {isMobile && trackId && trackStudies.length > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '6px 14px 8px',
+          borderTop: '1px solid var(--line)',
+          background: 'var(--paper)',
+        }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--ink-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: '10px' }}>
+            {trackTitle}
+          </span>
+          <TrackNav />
+        </div>
       )}
-
-      {/* Track prev/next */}
-      {trackId && trackStudies.length > 0 && (() => {
-        const prev = trackPos > 0 ? trackStudies[trackPos - 1] : null
-        const next = trackPos < trackStudies.length - 1 ? trackStudies[trackPos + 1] : null
-        const canPrev = prev && (prev.media_link || prev.audio_link)
-        const canNext = next && (next.media_link || next.audio_link)
-        return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-            <span style={{ fontSize: '0.72rem', color: 'var(--ink-soft)', whiteSpace: 'nowrap', maxWidth: isMobile ? '80px' : 'none', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {trackTitle}
-            </span>
-            <Link
-              to={canPrev ? `/study/${prev.study_id}?track=${trackId}&pos=${trackPos - 1}` : '#'}
-              style={{ padding: '5px 10px', border: '1px solid var(--line)', borderRadius: '6px', fontSize: '0.82rem', color: canPrev ? 'var(--slate)' : 'var(--line)', textDecoration: 'none', pointerEvents: canPrev ? 'auto' : 'none' }}
-            >
-              ←
-            </Link>
-            <span style={{ fontSize: '0.75rem', color: 'var(--ink-soft)' }}>{trackPos + 1}/{trackStudies.length}</span>
-            <Link
-              to={canNext ? `/study/${next.study_id}?track=${trackId}&pos=${trackPos + 1}` : '#'}
-              style={{ padding: '5px 10px', border: '1px solid var(--line)', borderRadius: '6px', fontSize: '0.82rem', color: canNext ? 'var(--slate)' : 'var(--line)', textDecoration: 'none', pointerEvents: canNext ? 'auto' : 'none' }}
-            >
-              →
-            </Link>
-          </div>
-        )
-      })()}
-
-      <Link to={trackId ? `/admin/tracks/${trackId}/detail` : '/admin/studies'} style={{
-        color: 'var(--ink-soft)', textDecoration: 'none', fontSize: '0.82rem',
-        padding: '6px 12px', border: '1px solid var(--line)', borderRadius: '6px', whiteSpace: 'nowrap',
-      }}>
-        {trackId ? '← Track' : '← Studies'}
-      </Link>
     </div>
   )
 
   // ── Mobile layout ──────────────────────────────────────────────
   if (isMobile) {
+    const hasVideo = !!study.media_link
+    const hasAudio = !!study.audio_link
+
     return (
       <div style={{
-        display: 'flex', flexDirection: 'column', height: '100vh',
+        display: 'flex', flexDirection: 'column',
+        height: '100dvh', // fixes iOS Safari chrome overlap
         background: 'var(--paper)', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
         overflow: 'hidden',
       }}>
         <TopBar />
 
-        {/* Video at top — 16:9 */}
-        <div style={{ width: '100%', aspectRatio: '16/9', flexShrink: 0, background: '#0a0a0a' }}>
-          {study.media_link ? (
+        {/* Video — only render if there's actually a video */}
+        {hasVideo && (
+          <div style={{ width: '100%', aspectRatio: '16/9', flexShrink: 0, background: '#0a0a0a' }}>
             <iframe
               src={study.media_link}
               style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
               allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
               allowFullScreen
             />
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(255,255,255,0.35)', fontSize: '0.85rem' }}>
-              No video for this study.
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Audio player (mobile) */}
-        {study.audio_link && (
+        {/* Audio player */}
+        {hasAudio && (
           <div style={{
-            background: 'var(--paper-raised)', borderBottom: '1px solid var(--line)',
-            padding: '10px 16px', flexShrink: 0,
-            display: 'flex', alignItems: 'center', gap: '10px',
+            background: hasVideo ? 'var(--paper-raised)' : 'var(--slate)',
+            borderBottom: '1px solid var(--line)',
+            padding: hasVideo ? '10px 16px' : '16px',
+            flexShrink: 0,
           }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-soft)', whiteSpace: 'nowrap' }}>
-              Audio only
-            </span>
-            <audio controls src={study.audio_link} style={{ flex: 1, height: '32px', accentColor: 'var(--slate)' }} />
+            {!hasVideo && (
+              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+                ♪ Audio Study — {study.study_title}
+              </div>
+            )}
+            <audio
+              controls
+              src={study.audio_link}
+              style={{ width: '100%', height: '36px', accentColor: hasVideo ? 'var(--slate)' : 'white', display: 'block' }}
+            />
+          </div>
+        )}
+
+        {/* No media at all */}
+        {!hasVideo && !hasAudio && (
+          <div style={{ padding: '16px', background: 'var(--paper-raised)', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--ink-soft)' }}>No media available for this study yet.</p>
           </div>
         )}
 
@@ -484,16 +515,20 @@ export default function StudyViewer() {
           display: 'flex', borderBottom: '1px solid var(--line)', flexShrink: 0,
           background: 'var(--paper)',
         }}>
-          {[{ id: 'scripture', label: 'Scripture' }, { id: 'notes', label: 'My Notes' }, { id: 'related', label: 'Related' }].map((tab) => (
+          {[
+            { id: 'scripture', label: 'Scripture' },
+            { id: 'notes',     label: 'Notes' },
+            { id: 'related',   label: 'Related' },
+          ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                flex: 1, padding: '10px', border: 'none', background: 'none',
+                flex: 1, padding: '11px 6px', border: 'none', background: 'none',
                 fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
                 color: activeTab === tab.id ? 'var(--slate)' : 'var(--ink-soft)',
                 borderBottom: activeTab === tab.id ? '2px solid var(--slate)' : '2px solid transparent',
-                transition: 'all 0.12s',
+                transition: 'color 0.12s, border-color 0.12s',
               }}
             >
               {tab.label}
@@ -502,12 +537,40 @@ export default function StudyViewer() {
         </div>
 
         {/* Tab content */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
           {activeTab === 'scripture' ? (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <TranslationBar compact />
+              {/* Compact scrollable translation picker */}
+              <div style={{
+                overflowX: 'auto', overflowY: 'hidden', flexShrink: 0,
+                padding: '8px 14px', borderBottom: '1px solid var(--line)',
+                display: 'flex', gap: '6px', alignItems: 'center',
+                background: 'var(--paper)', WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'none',
+              }}>
+                {TRANSLATIONS.map((t) => {
+                  const active = selectedTrans.includes(t.id)
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => toggleTranslation(t.id)}
+                      title={t.name}
+                      style={{
+                        padding: '4px 12px', border: '1px solid', borderRadius: '100px',
+                        fontSize: '0.77rem', fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+                        borderColor: active ? 'var(--slate)' : 'var(--line)',
+                        background: active ? 'var(--slate)' : 'transparent',
+                        color: active ? 'white' : 'var(--ink-soft)',
+                        transition: 'all 0.12s',
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  )
+                })}
+              </div>
               {study.passage_ref && (
-                <div style={{ padding: '8px 16px 0', fontSize: '0.82rem', fontWeight: 600, color: 'var(--ink-soft)', flexShrink: 0 }}>
+                <div style={{ padding: '8px 16px 2px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--ink-soft)', flexShrink: 0 }}>
                   {study.passage_ref}
                 </div>
               )}
@@ -516,7 +579,7 @@ export default function StudyViewer() {
           ) : activeTab === 'notes' ? (
             <NotesPanel flex />
           ) : (
-            <div style={{ flex: 1, overflow: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ flex: 1, overflow: 'auto', padding: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <CrossReferences
                 studyDbId={study.id}
                 studyId={study.study_id}
@@ -524,7 +587,7 @@ export default function StudyViewer() {
                 onSelect={handleXrefSelect}
                 selectedId={xrefStudy?.study_id}
               />
-              {/* Cross-ref passage inline on mobile */}
+              {/* Cross-ref passage inline */}
               {xrefStudy && (
                 <div style={{ border: '2px solid var(--gold)', borderRadius: '10px', overflow: 'hidden' }}>
                   <div style={{ padding: '8px 14px', background: '#fdf8ec', borderBottom: '1px solid #e8d49a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -532,13 +595,13 @@ export default function StudyViewer() {
                       <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--slate)' }}>{xrefStudy.study_title}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--ink-soft)' }}>{xrefStudy.passage_ref}</div>
                     </div>
-                    <button onClick={() => setXrefStudy(null)} style={{ background: 'none', border: 'none', color: 'var(--ink-soft)', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                    <button onClick={() => setXrefStudy(null)} style={{ background: 'none', border: 'none', color: 'var(--ink-soft)', cursor: 'pointer', fontSize: '1.1rem', padding: '4px 6px' }}>✕</button>
                   </div>
                   <div style={{ padding: '12px 14px', maxHeight: '300px', overflowY: 'auto' }}>
                     {selectedTrans.map((trans) => {
-                      const data = xrefPassages[trans]
+                      const data      = xrefPassages[trans]
                       const isLoading = xrefLoading[trans]
-                      const label = TRANSLATIONS.find(t => t.id === trans)?.label
+                      const label     = TRANSLATIONS.find(t => t.id === trans)?.label
                       return (
                         <div key={trans} style={{ marginBottom: '16px' }}>
                           <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--gold-dark)', marginBottom: '6px' }}>{label}</div>

@@ -639,4 +639,20 @@ h2 { font-size: 1.05rem; color: var(--ink-soft); margin-top: 0; }
   }
 
   h1 { font-size: 1.35rem; }
+
+  /* Recent studies grid — single column on mobile */
+  .recent-studies-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Landing page nav title — truncate on small screens */
+  .landing-nav-title {
+    display: none;
+  }
+
+  /* Features strip — single column */
+  .landing-features {
+    flex-direction: column;
+    align-items: center;
+  }
 }
