@@ -60,6 +60,9 @@ export default function StudyViewer() {
   const [study, setStudy]   = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // ── Media mode (video | audio) ───────────────────────────────
+  const [mediaMode, setMediaMode] = useState('video') // set properly after study loads
+
   // ── Vertical split (video | right panel) ────────────────────
   const [leftPct, setLeftPct]     = useState(58)
   const [readerOpen, setReaderOpen] = useState(true)
@@ -99,6 +102,7 @@ export default function StudyViewer() {
         .eq('study_id', id)
         .single()
       setStudy(data)
+      setMediaMode(data?.media_link ? 'video' : 'audio')
       setLoading(false)
     }
     load()
@@ -470,42 +474,60 @@ export default function StudyViewer() {
       }}>
         <TopBar />
 
-        {/* Video — only render if there's actually a video */}
-        {hasVideo && (
-          <div style={{ width: '100%', aspectRatio: '16/9', flexShrink: 0, background: '#0a0a0a' }}>
-            <iframe
-              src={study.media_link}
-              style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        )}
-
-        {/* Audio player */}
-        {hasAudio && (
-          <div style={{
-            background: hasVideo ? 'var(--paper-raised)' : 'var(--slate)',
-            borderBottom: '1px solid var(--line)',
-            padding: hasVideo ? '10px 16px' : '16px',
-            flexShrink: 0,
-          }}>
-            {!hasVideo && (
-              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
-                ♪ Audio Study — {study.study_title}
+        {/* Media section */}
+        {(hasVideo || hasAudio) && (
+          <div style={{ flexShrink: 0, background: '#0a0a0a' }}>
+            {/* Toggle — only when both exist */}
+            {hasVideo && hasAudio && (
+              <div style={{ display: 'flex', gap: '6px', padding: '8px 12px', background: 'rgba(0,0,0,0.4)' }}>
+                {[{ id: 'video', label: '▶  Video' }, { id: 'audio', label: '♪  Audio' }].map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => setMediaMode(m.id)}
+                    style={{
+                      padding: '5px 14px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                      fontSize: '0.78rem', fontWeight: 600,
+                      background: mediaMode === m.id ? 'var(--slate)' : 'rgba(255,255,255,0.1)',
+                      color: mediaMode === m.id ? 'white' : 'rgba(255,255,255,0.55)',
+                    }}
+                  >
+                    {m.label}
+                  </button>
+                ))}
               </div>
             )}
-            <audio
-              controls
-              src={study.audio_link}
-              style={{ width: '100%', height: '36px', accentColor: hasVideo ? 'var(--slate)' : 'white', display: 'block' }}
-            />
+
+            {/* Video */}
+            {hasVideo && mediaMode === 'video' && (
+              <div style={{ width: '100%', aspectRatio: '16/9' }}>
+                <iframe
+                  src={study.media_link}
+                  style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            )}
+
+            {/* Audio */}
+            {hasAudio && (mediaMode === 'audio' || !hasVideo) && (
+              <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.82rem', fontWeight: 600 }}>
+                  ♪ {study.study_title}
+                </div>
+                <audio
+                  controls
+                  src={study.audio_link}
+                  style={{ width: '100%', accentColor: '#b59040' }}
+                />
+              </div>
+            )}
           </div>
         )}
 
         {/* No media at all */}
         {!hasVideo && !hasAudio && (
-          <div style={{ padding: '16px', background: 'var(--paper-raised)', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+          <div style={{ padding: '14px 16px', background: 'var(--paper-raised)', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--ink-soft)' }}>No media available for this study yet.</p>
           </div>
         )}
@@ -650,37 +672,71 @@ export default function StudyViewer() {
           cursor: hDragging ? 'col-resize' : vDragging ? 'row-resize' : 'auto',
         }}
       >
-        {/* Video panel */}
+        {/* Media panel */}
         <div style={{
           width: readerOpen ? `${leftPct}%` : '100%',
           flexShrink: 0, background: '#0a0a0a',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          display: 'flex', flexDirection: 'column',
           transition: hDragging ? 'none' : 'width 0.2s ease',
         }}>
-          {study.media_link ? (
-            <iframe
-              src={study.media_link}
-              style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-            />
-          ) : (
-            <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.9rem', textAlign: 'center', padding: '40px' }}>
-              No video linked for this study.
+          {/* Toggle bar — only when both exist */}
+          {study.media_link && study.audio_link && (
+            <div style={{
+              display: 'flex', gap: '6px', padding: '10px 14px', flexShrink: 0,
+              background: 'rgba(0,0,0,0.5)',
+            }}>
+              {[{ id: 'video', label: '▶  Video' }, { id: 'audio', label: '♪  Audio Only' }].map(m => (
+                <button
+                  key={m.id}
+                  onClick={() => setMediaMode(m.id)}
+                  style={{
+                    padding: '5px 14px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                    fontSize: '0.78rem', fontWeight: 600,
+                    background: mediaMode === m.id ? 'var(--slate)' : 'rgba(255,255,255,0.1)',
+                    color: mediaMode === m.id ? 'white' : 'rgba(255,255,255,0.55)',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {m.label}
+                </button>
+              ))}
             </div>
           )}
 
-          {/* Audio player (desktop) */}
-          {study.audio_link && (
-            <div style={{
-              padding: '8px 16px', flexShrink: 0,
-              background: 'rgba(0,0,0,0.6)',
-              display: 'flex', alignItems: 'center', gap: '10px',
-            }}>
-              <span style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>
-                Audio only
-              </span>
-              <audio controls src={study.audio_link} style={{ flex: 1, height: '28px', accentColor: '#b59040' }} />
+          {/* Video */}
+          {study.media_link && mediaMode === 'video' && (
+            <iframe
+              src={study.media_link}
+              style={{ flex: 1, width: '100%', border: 'none', display: 'block' }}
+              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+            />
+          )}
+
+          {/* Audio */}
+          {study.audio_link && mediaMode === 'audio' && (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', gap: '24px' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: '12px', opacity: 0.4 }}>♪</div>
+                <div style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 600, fontSize: '1rem', marginBottom: '4px' }}>
+                  {study.study_title}
+                </div>
+                {study.passage_ref && (
+                  <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>{study.passage_ref}</div>
+                )}
+              </div>
+              <audio
+                controls
+                src={study.audio_link}
+                style={{ width: '100%', maxWidth: '400px', accentColor: '#b59040' }}
+              />
+            </div>
+          )}
+
+          {/* No media */}
+          {!study.media_link && !study.audio_link && (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.9rem' }}>
+              No media linked for this study.
             </div>
           )}
         </div>

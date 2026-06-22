@@ -36,6 +36,7 @@ export default function StudyEditor() {
     slides_link: '',
     distribution: ['Personal'],
     week_number: '',
+    tags: [],
   })
 
   useEffect(() => {
@@ -56,6 +57,7 @@ export default function StudyEditor() {
         ...data,
         distribution: data.distribution || [],
         week_number: data.week_number ?? '',
+        tags: data.tags || [],
       })
     }
     setLoading(false)
@@ -83,10 +85,12 @@ export default function StudyEditor() {
     setSuccessMsg('')
     setSaving(true)
 
+    const { _tagsRaw, ...formClean } = form
     const payload = {
-      ...form,
+      ...formClean,
       week_number: form.week_number === '' ? null : Number(form.week_number),
       book_id: form.book_id || null,
+      tags: form.tags || [],
     }
 
     let result
@@ -117,8 +121,8 @@ export default function StudyEditor() {
           <h1>{isNew ? 'New Study' : form.study_title || 'Edit Study'}</h1>
           <p className="page-subtitle">Fill in what you have — you can always come back and finish later.</p>
         </div>
-        {!isNew && (form.media_link || form.audio_link) && (
-          <Link to={`/study/${id}`} className="btn-secondary" style={{ alignSelf: 'flex-start' }}>
+        {!isNew && form.study_id && (form.media_link || form.audio_link) && (
+          <Link to={`/study/${form.study_id}`} className="btn-secondary" style={{ alignSelf: 'flex-start' }}>
             View Study →
           </Link>
         )}
@@ -206,6 +210,38 @@ export default function StudyEditor() {
               placeholder="Write the main teaching content here. This is the heart of the study."
             />
           </label>
+
+          <label style={{ marginTop: '16px' }}>
+            Tags
+            <input
+              type="text"
+              value={(form.tags || []).join(', ')}
+              onChange={(e) => {
+                const raw = e.target.value
+                // Keep as string while typing; parse on blur
+                updateField('_tagsRaw', raw)
+              }}
+              onBlur={(e) => {
+                const parsed = e.target.value.split(',').map(t => t.trim()).filter(Boolean)
+                updateField('tags', parsed)
+                updateField('_tagsRaw', undefined)
+              }}
+              placeholder="e.g. creation, covenant, faith — comma separated"
+            />
+          </label>
+          {(form.tags || []).length > 0 && (
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+              {form.tags.map(tag => (
+                <span key={tag} style={{
+                  padding: '3px 10px', borderRadius: '100px',
+                  background: 'var(--slate-light)', color: 'var(--slate)',
+                  fontSize: '0.78rem', fontWeight: 600,
+                }}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="form-section">
