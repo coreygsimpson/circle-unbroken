@@ -25,14 +25,27 @@ const STAGES = {
 }
 
 export default function VideoUploader({ studyTitle = 'study-video', onComplete, currentMediaLink }) {
-  const [stage, setStage]       = useState('idle')
-  const [progress, setProgress] = useState(0)
-  const [errorMsg, setErrorMsg] = useState('')
-  const uploadRef = useRef(null)
+  const [stage, setStage]         = useState('idle')
+  const [progress, setProgress]   = useState(0)
+  const [errorMsg, setErrorMsg]   = useState('')
+  const [isDragOver, setIsDragOver] = useState(false)
+  const uploadRef    = useRef(null)
   const fileInputRef = useRef(null)
 
-  async function handleFileChange(e) {
+  function handleFileChange(e) {
     const file = e.target.files?.[0]
+    if (file) processFile(file)
+  }
+
+  function handleDrop(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) processFile(file)
+  }
+
+  async function processFile(file) {
     if (!file) return
 
     setStage('uploading')
@@ -200,19 +213,27 @@ export default function VideoUploader({ studyTitle = 'study-video', onComplete, 
 
       {/* File picker (only when idle and no current video) */}
       {!currentMediaLink && stage === 'idle' && (
-        <label style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: '10px', padding: '20px',
-          border: '2px dashed var(--line)', borderRadius: '8px',
-          cursor: 'pointer', fontSize: '0.88rem', color: 'var(--ink-soft)',
-          background: 'var(--paper)', transition: 'border-color 0.15s',
-        }}
-          onDragOver={(e) => e.preventDefault()}
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          onDragEnter={(e) => { e.preventDefault(); setIsDragOver(true) }}
+          onDragOver={(e)  => { e.preventDefault(); setIsDragOver(true) }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={handleDrop}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: '10px', padding: '24px 20px',
+            border: `2px dashed ${isDragOver ? 'var(--slate)' : 'var(--line)'}`,
+            borderRadius: '8px', cursor: 'pointer',
+            fontSize: '0.88rem',
+            color: isDragOver ? 'var(--slate)' : 'var(--ink-soft)',
+            background: isDragOver ? 'var(--slate-light)' : 'var(--paper)',
+            transition: 'all 0.15s',
+          }}
         >
           <span style={{ fontSize: '1.3rem' }}>🎬</span>
-          <span>Click to choose a video file, or drag and drop</span>
+          <span>{isDragOver ? 'Drop to upload' : 'Click to choose a video file, or drag and drop'}</span>
           <input ref={fileInputRef} type="file" accept="video/*" onChange={handleFileChange} style={{ display: 'none' }} />
-        </label>
+        </div>
       )}
 
       {/* Progress */}

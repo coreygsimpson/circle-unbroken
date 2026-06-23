@@ -13,13 +13,26 @@ import { supabase } from '../lib/supabase'
  *   currentAudioLink — shows current state if already set
  */
 export default function AudioUploader({ studyId, onComplete, currentAudioLink }) {
-  const [stage, setStage]     = useState('idle') // idle | uploading | done | error
-  const [progress, setProgress] = useState(0)
-  const [errorMsg, setErrorMsg] = useState('')
+  const [stage, setStage]           = useState('idle')
+  const [progress, setProgress]     = useState(0)
+  const [errorMsg, setErrorMsg]     = useState('')
+  const [isDragOver, setIsDragOver] = useState(false)
   const fileInputRef = useRef(null)
 
-  async function handleFileChange(e) {
+  function handleFileChange(e) {
     const file = e.target.files?.[0]
+    if (file) processFile(file)
+  }
+
+  function handleDrop(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) processFile(file)
+  }
+
+  async function processFile(file) {
     if (!file) return
 
     setStage('uploading')
@@ -70,17 +83,27 @@ export default function AudioUploader({ studyId, onComplete, currentAudioLink })
 
       {/* File picker */}
       {!currentAudioLink && stage === 'idle' && (
-        <label style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: '10px', padding: '16px',
-          border: '2px dashed var(--line)', borderRadius: '8px',
-          cursor: 'pointer', fontSize: '0.88rem', color: 'var(--ink-soft)',
-          background: 'var(--paper)',
-        }}>
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          onDragEnter={(e) => { e.preventDefault(); setIsDragOver(true) }}
+          onDragOver={(e)  => { e.preventDefault(); setIsDragOver(true) }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={handleDrop}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: '10px', padding: '20px 16px',
+            border: `2px dashed ${isDragOver ? 'var(--slate)' : 'var(--line)'}`,
+            borderRadius: '8px', cursor: 'pointer',
+            fontSize: '0.88rem',
+            color: isDragOver ? 'var(--slate)' : 'var(--ink-soft)',
+            background: isDragOver ? 'var(--slate-light)' : 'var(--paper)',
+            transition: 'all 0.15s',
+          }}
+        >
           <span style={{ fontSize: '1.2rem' }}>🎵</span>
-          <span>Upload audio file (MP3, M4A, WAV…)</span>
+          <span>{isDragOver ? 'Drop to upload' : 'Click to choose an audio file, or drag and drop'}</span>
           <input ref={fileInputRef} type="file" accept="audio/*" onChange={handleFileChange} style={{ display: 'none' }} />
-        </label>
+        </div>
       )}
 
       {/* Uploading */}
