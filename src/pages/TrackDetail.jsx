@@ -21,7 +21,9 @@ export default function TrackDetail() {
           .order('position'),
       ])
       setTrack(track)
-      setStudies((ts || []).map(row => row.studies))
+      const allStudies = (ts || []).map(row => row.studies).filter(Boolean)
+      // Non-admins only see Published studies in the track
+      setStudies(isAdmin ? allStudies : allStudies.filter(s => s.status === 'Published'))
       setLoading(false)
     }
     load()

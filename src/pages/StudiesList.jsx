@@ -20,11 +20,15 @@ export default function StudiesList() {
 
   async function loadStudies() {
     setLoading(true)
-    const { data, error } = await supabase
+    let query = supabase
       .from('studies')
       .select('*, books(book_name, book_order)')
-      .order('week_number', { ascending: true, nullsFirst: false })
+      .order('book_id', { ascending: true, nullsFirst: false })
+      .order('study_id', { ascending: true })
 
+    if (!isAdmin) query = query.eq('status', 'Published')
+
+    const { data, error } = await query
     if (!error) setStudies(data)
     setLoading(false)
   }
@@ -53,8 +57,8 @@ export default function StudiesList() {
               <th>Study ID</th>
               <th>Title</th>
               <th>Book</th>
-              <th>Status</th>
-              <th>Week</th>
+              {isAdmin && <th>Status</th>}
+              <th>Duration</th>
               <th></th>
             </tr>
           </thead>
@@ -64,10 +68,12 @@ export default function StudiesList() {
                 <td className="mono">{study.study_id}</td>
                 <td>{study.study_title}</td>
                 <td>{study.books?.book_name || '—'}</td>
-                <td>
-                  <span className={`badge ${STATUS_COLORS[study.status]}`}>{study.status}</span>
-                </td>
-                <td>{study.week_number ?? '—'}</td>
+                {isAdmin && (
+                  <td>
+                    <span className={`badge ${STATUS_COLORS[study.status]}`}>{study.status}</span>
+                  </td>
+                )}
+                <td>{study.duration_minutes ? `${study.duration_minutes} min` : '—'}</td>
                 <td>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     {isAdmin && (

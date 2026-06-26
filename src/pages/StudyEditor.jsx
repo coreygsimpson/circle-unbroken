@@ -35,7 +35,7 @@ export default function StudyEditor() {
     cf_video_uid: '',
     slides_link: '',
     distribution: ['Personal'],
-    week_number: '',
+    duration_minutes: '',
     tags: [],
   })
 
@@ -56,7 +56,7 @@ export default function StudyEditor() {
       setForm({
         ...data,
         distribution: data.distribution || [],
-        week_number: data.week_number ?? '',
+        duration_minutes: data.duration_minutes ?? '',
         tags: data.tags || [],
       })
     }
@@ -88,7 +88,7 @@ export default function StudyEditor() {
     const { _tagsRaw, ...formClean } = form
     const payload = {
       ...formClean,
-      week_number: form.week_number === '' ? null : Number(form.week_number),
+      duration_minutes: form.duration_minutes === '' ? null : Number(form.duration_minutes),
       book_id: form.book_id || null,
       tags: form.tags || [],
     }
@@ -308,12 +308,13 @@ export default function StudyEditor() {
             </label>
 
             <label>
-              Week Number
+              Duration (minutes)
               <input
                 type="number"
-                value={form.week_number}
-                onChange={(e) => updateField('week_number', e.target.value)}
-                placeholder="e.g. 1"
+                value={form.duration_minutes}
+                onChange={(e) => updateField('duration_minutes', e.target.value)}
+                placeholder="e.g. 45"
+                min="1"
               />
             </label>
           </div>

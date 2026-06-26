@@ -31,7 +31,7 @@ export default function StudyViewer() {
   const [searchParams] = useSearchParams()
   const trackId  = searchParams.get('track')
   const trackPos = parseInt(searchParams.get('pos') ?? '-1', 10)
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const isMobile = useIsMobile()
   const [activeTab, setActiveTab] = useState('scripture') // 'scripture' | 'notes' | 'related'
 
@@ -46,12 +46,16 @@ export default function StudyViewer() {
         supabase.from('tracks').select('title').eq('id', trackId).single(),
         supabase
           .from('track_studies')
-          .select('position, studies(study_id, media_link, audio_link)')
+          .select('position, studies(study_id, status, media_link, audio_link)')
           .eq('track_id', trackId)
           .order('position'),
       ])
       if (track) setTrackTitle(track.title)
-      if (ts) setTrackStudies(ts.map(row => row.studies))
+      if (ts) {
+        const allSiblings = ts.map(row => row.studies).filter(Boolean)
+        // Non-admins skip over draft/ready siblings in prev/next navigation
+        setTrackStudies(isAdmin ? allSiblings : allSiblings.filter(s => s.status === 'Published'))
+      }
     }
     loadTrack()
   }, [trackId])
@@ -96,11 +100,14 @@ export default function StudyViewer() {
   // ────────────────────────────────────────────────────────────
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
+      let query = supabase
         .from('studies')
         .select('*, books(book_name)')
         .eq('study_id', id)
-        .single()
+
+      if (!isAdmin) query = query.eq('status', 'Published')
+
+      const { data } = await query.single()
       setStudy(data)
       setMediaMode(data?.media_link ? 'video' : 'audio')
       setLoading(false)
@@ -420,7 +427,7 @@ export default function StudyViewer() {
           </div>
           {!isMobile && (
             <div style={{ fontSize: '0.78rem', color: 'var(--ink-soft)' }}>
-              {study.passage_ref}{study.books?.book_name ? ` · ${study.books.book_name}` : ''}{study.week_number ? ` · Week ${study.week_number}` : ''}
+              {study.passage_ref}{study.books?.book_name ? ` · ${study.books.book_name}` : ''}{study.duration_minutes ? ` · ${study.duration_minutes >= 60 ? `${Math.floor(study.duration_minutes / 60)} hr ${study.duration_minutes % 60 ? `${study.duration_minutes % 60} min` : ''}`.trim() : `${study.duration_minutes} min`}` : ''}
             </div>
           )}
         </div>
