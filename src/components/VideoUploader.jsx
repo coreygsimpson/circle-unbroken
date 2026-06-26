@@ -94,7 +94,8 @@ export default function VideoUploader({ studyTitle = 'study-video', onComplete, 
         const data = await res.json()
         const state = data.result?.status?.state
         if (state === 'ready') {
-          await triggerAudioExtraction(uid)
+          const durationSeconds = data.result?.duration ?? null
+          await triggerAudioExtraction(uid, durationSeconds)
           return
         }
         if (state === 'error') {
@@ -110,17 +111,15 @@ export default function VideoUploader({ studyTitle = 'study-video', onComplete, 
   }
 
   // 4 ── Trigger M4A audio extraction, then poll until the audio URL is ready
-  async function triggerAudioExtraction(uid) {
+  async function triggerAudioExtraction(uid, durationSeconds) {
     setStage('audio')
     try {
       await fetch(`/api/stream/${uid}/audio`, { method: 'POST' })
     } catch {
-      // If triggering fails, still finish with video-only
-      finalize(uid, null)
+      finalize(uid, null, durationSeconds)
       return
     }
 
-    // Poll for audio readiness
     while (true) {
       await sleep(POLL_INTERVAL)
       try {
@@ -128,12 +127,11 @@ export default function VideoUploader({ studyTitle = 'study-video', onComplete, 
         const data = await res.json()
         const audio = data.result?.audio
         if (audio?.status === 'ready') {
-          finalize(uid, audio.url)
+          finalize(uid, audio.url, durationSeconds)
           return
         }
         if (audio?.status === 'error') {
-          // Audio failed but video is fine — finish without audio
-          finalize(uid, null)
+          finalize(uid, null, durationSeconds)
           return
         }
       } catch {
@@ -142,13 +140,14 @@ export default function VideoUploader({ studyTitle = 'study-video', onComplete, 
     }
   }
 
-  function finalize(uid, audioUrl) {
+  function finalize(uid, audioUrl, durationSeconds) {
     const mediaLink = `https://iframe.cloudflarestream.com/${uid}`
     setStage('done')
     onComplete?.({
       cfVideoUid: uid,
       mediaLink,
       audioLink: audioUrl ?? null,
+      durationMinutes: durationSeconds ? Math.round(durationSeconds / 60) : null,
     })
   }
 

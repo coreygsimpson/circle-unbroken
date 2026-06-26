@@ -260,10 +260,11 @@ export default function StudyEditor() {
             <VideoUploader
               studyTitle={form.study_title}
               currentMediaLink={form.media_link}
-              onComplete={({ cfVideoUid, mediaLink, audioLink }) => {
+              onComplete={({ cfVideoUid, mediaLink, audioLink, durationMinutes }) => {
                 updateField('cf_video_uid', cfVideoUid)
                 updateField('media_link', mediaLink)
                 if (audioLink) updateField('audio_link', audioLink)
+                if (durationMinutes) updateField('duration_minutes', durationMinutes)
               }}
             />
           )}
@@ -309,13 +310,48 @@ export default function StudyEditor() {
 
             <label>
               Duration (minutes)
-              <input
-                type="number"
-                value={form.duration_minutes}
-                onChange={(e) => updateField('duration_minutes', e.target.value)}
-                placeholder="e.g. 45"
-                min="1"
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  type="number"
+                  value={form.duration_minutes}
+                  onChange={(e) => updateField('duration_minutes', e.target.value)}
+                  placeholder="e.g. 45"
+                  min="1"
+                  style={{ flex: 1 }}
+                />
+                {(form.cf_video_uid || form.audio_link) && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (form.cf_video_uid) {
+                        // Fetch from Cloudflare Stream metadata
+                        try {
+                          const res = await fetch(`/api/stream/${form.cf_video_uid}/status`)
+                          const data = await res.json()
+                          const secs = data.result?.duration
+                          if (secs) updateField('duration_minutes', Math.round(secs / 60))
+                        } catch { /* ignore */ }
+                      } else if (form.audio_link) {
+                        // Read duration from audio element
+                        const audio = new Audio(form.audio_link)
+                        audio.addEventListener('loadedmetadata', () => {
+                          if (audio.duration && isFinite(audio.duration)) {
+                            updateField('duration_minutes', Math.round(audio.duration / 60))
+                          }
+                        })
+                        audio.load()
+                      }
+                    }}
+                    style={{
+                      padding: '8px 12px', border: '1px solid var(--line)', borderRadius: '7px',
+                      background: 'var(--paper)', color: 'var(--ink-soft)', fontSize: '0.8rem',
+                      cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                    }}
+                  >
+                    Fetch from media
+                  </button>
+                )}
+              </div>
             </label>
           </div>
 
