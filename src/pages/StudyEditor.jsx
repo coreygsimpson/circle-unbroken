@@ -18,6 +18,8 @@ export default function StudyEditor() {
   const [books, setBooks] = useState([])
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
 
@@ -109,6 +111,20 @@ export default function StudyEditor() {
       if (isNew) {
         navigate(`/admin/studies/${result.data.id}`, { replace: true })
       }
+    }
+  }
+
+  async function handleDelete() {
+    setDeleting(true)
+    // Remove from any tracks first, then delete the study
+    await supabase.from('track_studies').delete().eq('study_id', id)
+    const { error } = await supabase.from('studies').delete().eq('id', id)
+    if (error) {
+      setDeleting(false)
+      setConfirmDelete(false)
+      setError(error.message)
+    } else {
+      navigate('/admin/studies')
     }
   }
 
@@ -383,11 +399,53 @@ export default function StudyEditor() {
         {error && <div className="form-error">{error}</div>}
         {successMsg && <div className="form-success">{successMsg}</div>}
 
-        <div className="form-actions">
-          <button type="submit" className="btn-primary" disabled={saving}>
-            {saving ? 'Saving...' : 'Save Study'}
-          </button>
-        </div>
+        {confirmDelete ? (
+          <div style={{
+            padding: '20px 24px', borderRadius: '10px',
+            background: 'var(--error-bg)', border: '1px solid #f5c6cb',
+            display: 'flex', flexDirection: 'column', gap: '12px',
+          }}>
+            <div>
+              <div style={{ fontWeight: 700, color: 'var(--error)', marginBottom: '4px' }}>Delete this study?</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--error)' }}>
+                This will permanently delete <strong>{form.study_title || 'this study'}</strong> and remove it from any tracks. This cannot be undone.
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', background: 'var(--error)', color: 'white', fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer' }}
+              >
+                {deleting ? 'Deleting…' : 'Yes, delete it'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+                style={{ padding: '8px 18px', borderRadius: '7px', border: '1px solid var(--line)', background: 'var(--paper)', color: 'var(--ink)', fontSize: '0.88rem', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="form-actions" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? 'Saving...' : 'Save Study'}
+            </button>
+            {!isNew && (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                style={{ background: 'none', border: 'none', color: 'var(--error)', fontSize: '0.82rem', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+              >
+                Delete study
+              </button>
+            )}
+          </div>
+        )}
       </form>
     </div>
   )
