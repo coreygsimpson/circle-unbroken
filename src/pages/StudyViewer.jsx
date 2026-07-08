@@ -16,13 +16,13 @@ function useIsMobile(breakpoint = 768) {
 }
 
 const TRANSLATIONS = [
-  { id: 'kjv',   label: 'KJV',   name: 'King James Version',     src: 'bible-api' },
-  { id: 'web',   label: 'WEB',   name: 'World English Bible',    src: 'bible-api' },
-  { id: 'asv',   label: 'ASV',   name: 'American Standard',      src: 'bible-api' },
-  { id: 'ylt',   label: 'YLT',   name: "Young's Literal",        src: 'bible-api' },
-  { id: 'darby', label: 'Darby', name: 'Darby Translation',      src: 'bible-api' },
-  { id: 'bbe',   label: 'BBE',   name: 'Basic English',          src: 'bible-api' },
-  { id: 'nkjv',  label: 'NKJV',  name: 'New King James Version', src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_NKJV },
+  { id: 'kjv',   label: 'KJV',   name: 'King James Version',     src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_KJV   },
+  { id: 'web',   label: 'WEB',   name: 'World English Bible',    src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_WEB   },
+  { id: 'asv',   label: 'ASV',   name: 'American Standard',      src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_ASV   },
+  { id: 'ylt',   label: 'YLT',   name: "Young's Literal",        src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_YLT   },
+  { id: 'darby', label: 'Darby', name: 'Darby Translation',      src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_DARBY },
+  { id: 'bbe',   label: 'BBE',   name: 'Basic English',          src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_BBE   },
+  { id: 'nkjv',  label: 'NKJV',  name: 'New King James Version', src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_NKJV  },
   { id: 'net',   label: 'NET',   name: 'New English Translation', src: 'bible-org' },
 ]
 
@@ -101,23 +101,35 @@ const BOOK_MAP = {
 
 function toApiBibleRef(passageRef) {
   const normalized = passageRef.trim().replace(/\s*[–—]\s*/g, '-').replace(/\s+-\s+/g, '-')
-  // "Book Name Ch:V" or "Book Name Ch:V-EndV" or "Book Name Ch:V-EndCh:EndV"
-  const match = normalized.match(/^(.+?)\s+(\d+):(\d+)(?:-(?:(\d+):)?(\d+))?$/i)
-  if (!match) return null
-  const [, book, ch1, v1, endCh, endV] = match
-  const code = BOOK_MAP[book.toLowerCase().trim()]
-  if (!code) return null
-  const startId = `${code}.${ch1}.${v1}`
-  if (!endV) return startId
-  return `${startId}-${code}.${endCh ?? ch1}.${endV}`
+
+  // "Book Ch:V[-[EndCh:]EndV]" — verse-level reference
+  const verseMatch = normalized.match(/^(.+?)\s+(\d+):(\d+)(?:-(?:(\d+):)?(\d+))?$/i)
+  if (verseMatch) {
+    const [, book, ch1, v1, endCh, endV] = verseMatch
+    const code = BOOK_MAP[book.toLowerCase().trim()]
+    if (!code) return null
+    const startId = `${code}.${ch1}.${v1}`
+    return { id: endV ? `${startId}-${code}.${endCh ?? ch1}.${endV}` : startId, endpoint: 'passages' }
+  }
+
+  // "Book Ch" — bare chapter, no verse numbers
+  const chapterMatch = normalized.match(/^(.+?)\s+(\d+)$/i)
+  if (chapterMatch) {
+    const [, book, ch] = chapterMatch
+    const code = BOOK_MAP[book.toLowerCase().trim()]
+    if (!code) return null
+    return { id: `${code}.${ch}`, endpoint: 'chapters' }
+  }
+
+  return null
 }
 
 async function fetchPassage(transId, passageRef) {
   const t = TRANSLATIONS.find(t => t.id === transId)
   if (t?.src === 'api-bible') {
     if (!t.bibleId || !API_BIBLE_KEY) return { error: true }
-    const passageId = toApiBibleRef(passageRef)
-    if (!passageId) return { error: true }
+    const parsed = toApiBibleRef(passageRef)
+    if (!parsed) return { error: true }
     const params = new URLSearchParams({
       'content-type': 'html',
       'include-notes': 'false',
@@ -126,10 +138,11 @@ async function fetchPassage(transId, passageRef) {
       'include-verse-numbers': 'true',
       'include-verse-spans': 'false',
     })
-    const res = await fetch(
-      `https://rest.api.bible/v1/bibles/${t.bibleId}/passages/${passageId}?${params}`,
-      { headers: { 'api-key': API_BIBLE_KEY } }
-    )
+    const base = `https://rest.api.bible/v1/bibles/${t.bibleId}`
+    const url = parsed.endpoint === 'chapters'
+      ? `${base}/chapters/${parsed.id}?${params}`
+      : `${base}/passages/${parsed.id}?${params}`
+    const res = await fetch(url, { headers: { 'api-key': API_BIBLE_KEY } })
     if (!res.ok) return { error: true }
     const json = await res.json()
     return { content: json.data.content ?? '', copyright: json.data.copyright ?? '' }
@@ -153,6 +166,7 @@ async function fetchPassage(transId, passageRef) {
   // Public-domain: bible-api.com
   const ref = passageRef.replace(/\s+/g, '+')
   const res = await fetch(`https://bible-api.com/${ref}?translation=${transId}`)
+  if (!res.ok) return { error: true }
   return await res.json()
 }
 
