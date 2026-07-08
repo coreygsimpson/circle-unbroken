@@ -16,14 +16,11 @@ function useIsMobile(breakpoint = 768) {
 }
 
 const TRANSLATIONS = [
-  { id: 'kjv',   label: 'KJV',   name: 'King James Version',     src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_KJV   },
-  { id: 'web',   label: 'WEB',   name: 'World English Bible',    src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_WEB   },
-  { id: 'asv',   label: 'ASV',   name: 'American Standard',      src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_ASV   },
-  { id: 'ylt',   label: 'YLT',   name: "Young's Literal",        src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_YLT   },
-  { id: 'darby', label: 'Darby', name: 'Darby Translation',      src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_DARBY },
-  { id: 'bbe',   label: 'BBE',   name: 'Basic English',          src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_BBE   },
-  { id: 'nkjv',  label: 'NKJV',  name: 'New King James Version', src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_NKJV  },
-  { id: 'net',   label: 'NET',   name: 'New English Translation', src: 'bible-org' },
+  { id: 'kjv',  label: 'KJV',  name: 'King James Version',     src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_KJV  },
+  { id: 'web',  label: 'WEB',  name: 'World English Bible',    src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_WEB  },
+  { id: 'asv',  label: 'ASV',  name: 'American Standard',      src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_ASV  },
+  { id: 'nkjv', label: 'NKJV', name: 'New King James Version', src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_NKJV },
+  { id: 'net',  label: 'NET',  name: 'New English Translation', src: 'bible-org' },
 ]
 
 const SAVE_DELAY_MS = 1200
