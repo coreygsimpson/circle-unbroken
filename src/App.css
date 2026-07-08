@@ -520,6 +520,18 @@ h2 { font-size: 1.05rem; color: var(--ink-soft); margin-top: 0; }
   -webkit-overflow-scrolling: touch;
 }
 
+/* ---------- API.Bible HTML passage content ---------- */
+.api-bible-content p { margin: 0 0 0.5em; }
+.api-bible-content p:last-child { margin-bottom: 0; }
+.api-bible-content .v {
+  font-size: 0.62em;
+  font-weight: 700;
+  color: var(--gold);
+  margin-right: 2px;
+  vertical-align: super;
+  line-height: 0;
+}
+
 /* ---------- Mobile breakpoint ---------- */
 @media (max-width: 720px) {
 

@@ -16,15 +16,145 @@ function useIsMobile(breakpoint = 768) {
 }
 
 const TRANSLATIONS = [
-  { id: 'kjv',   label: 'KJV',   name: 'King James Version' },
-  { id: 'web',   label: 'WEB',   name: 'World English Bible' },
-  { id: 'asv',   label: 'ASV',   name: 'American Standard' },
-  { id: 'ylt',   label: 'YLT',   name: "Young's Literal" },
-  { id: 'darby', label: 'Darby', name: 'Darby Translation' },
-  { id: 'bbe',   label: 'BBE',   name: 'Basic English' },
+  { id: 'kjv',   label: 'KJV',   name: 'King James Version',     src: 'bible-api' },
+  { id: 'web',   label: 'WEB',   name: 'World English Bible',    src: 'bible-api' },
+  { id: 'asv',   label: 'ASV',   name: 'American Standard',      src: 'bible-api' },
+  { id: 'ylt',   label: 'YLT',   name: "Young's Literal",        src: 'bible-api' },
+  { id: 'darby', label: 'Darby', name: 'Darby Translation',      src: 'bible-api' },
+  { id: 'bbe',   label: 'BBE',   name: 'Basic English',          src: 'bible-api' },
+  { id: 'nkjv',  label: 'NKJV',  name: 'New King James Version', src: 'api-bible', bibleId: import.meta.env.VITE_BIBLE_ID_NKJV },
+  { id: 'net',   label: 'NET',   name: 'New English Translation', src: 'bible-org' },
 ]
 
 const SAVE_DELAY_MS = 1200
+
+const API_BIBLE_KEY = import.meta.env.VITE_API_BIBLE_KEY
+
+const BOOK_MAP = {
+  'genesis': 'GEN', 'gen': 'GEN',
+  'exodus': 'EXO', 'exo': 'EXO', 'ex': 'EXO',
+  'leviticus': 'LEV', 'lev': 'LEV',
+  'numbers': 'NUM', 'num': 'NUM',
+  'deuteronomy': 'DEU', 'deut': 'DEU', 'deu': 'DEU', 'dt': 'DEU',
+  'joshua': 'JOS', 'josh': 'JOS', 'jos': 'JOS',
+  'judges': 'JDG', 'judg': 'JDG', 'jdg': 'JDG',
+  'ruth': 'RUT', 'rut': 'RUT',
+  '1 samuel': '1SA', '1samuel': '1SA', '1sam': '1SA', '1 sam': '1SA', '1sa': '1SA',
+  '2 samuel': '2SA', '2samuel': '2SA', '2sam': '2SA', '2 sam': '2SA', '2sa': '2SA',
+  '1 kings': '1KI', '1kings': '1KI', '1kgs': '1KI', '1 kgs': '1KI', '1ki': '1KI',
+  '2 kings': '2KI', '2kings': '2KI', '2kgs': '2KI', '2 kgs': '2KI', '2ki': '2KI',
+  '1 chronicles': '1CH', '1chronicles': '1CH', '1chr': '1CH', '1 chr': '1CH', '1ch': '1CH',
+  '2 chronicles': '2CH', '2chronicles': '2CH', '2chr': '2CH', '2 chr': '2CH', '2ch': '2CH',
+  'ezra': 'EZR', 'ezr': 'EZR',
+  'nehemiah': 'NEH', 'neh': 'NEH',
+  'esther': 'EST', 'esth': 'EST', 'est': 'EST',
+  'job': 'JOB',
+  'psalms': 'PSA', 'psalm': 'PSA', 'psa': 'PSA', 'ps': 'PSA',
+  'proverbs': 'PRO', 'prov': 'PRO', 'pro': 'PRO',
+  'ecclesiastes': 'ECC', 'eccl': 'ECC', 'ecc': 'ECC',
+  'song of solomon': 'SNG', 'song of songs': 'SNG', 'song': 'SNG', 'sos': 'SNG', 'ss': 'SNG',
+  'isaiah': 'ISA', 'isa': 'ISA',
+  'jeremiah': 'JER', 'jer': 'JER',
+  'lamentations': 'LAM', 'lam': 'LAM',
+  'ezekiel': 'EZK', 'ezek': 'EZK', 'eze': 'EZK', 'ezk': 'EZK',
+  'daniel': 'DAN', 'dan': 'DAN',
+  'hosea': 'HOS', 'hos': 'HOS',
+  'joel': 'JOL', 'joe': 'JOL',
+  'amos': 'AMO', 'amo': 'AMO',
+  'obadiah': 'OBA', 'oba': 'OBA', 'obad': 'OBA',
+  'jonah': 'JON', 'jon': 'JON',
+  'micah': 'MIC', 'mic': 'MIC',
+  'nahum': 'NAM', 'nah': 'NAM', 'nam': 'NAM',
+  'habakkuk': 'HAB', 'hab': 'HAB',
+  'zephaniah': 'ZEP', 'zeph': 'ZEP', 'zep': 'ZEP',
+  'haggai': 'HAG', 'hag': 'HAG',
+  'zechariah': 'ZEC', 'zech': 'ZEC', 'zec': 'ZEC',
+  'malachi': 'MAL', 'mal': 'MAL',
+  'matthew': 'MAT', 'matt': 'MAT', 'mat': 'MAT',
+  'mark': 'MRK', 'mrk': 'MRK', 'mar': 'MRK',
+  'luke': 'LUK', 'luk': 'LUK',
+  'john': 'JHN', 'jhn': 'JHN', 'joh': 'JHN',
+  'acts': 'ACT', 'act': 'ACT',
+  'romans': 'ROM', 'rom': 'ROM',
+  '1 corinthians': '1CO', '1corinthians': '1CO', '1cor': '1CO', '1 cor': '1CO', '1co': '1CO',
+  '2 corinthians': '2CO', '2corinthians': '2CO', '2cor': '2CO', '2 cor': '2CO', '2co': '2CO',
+  'galatians': 'GAL', 'gal': 'GAL',
+  'ephesians': 'EPH', 'eph': 'EPH',
+  'philippians': 'PHP', 'phil': 'PHP', 'php': 'PHP',
+  'colossians': 'COL', 'col': 'COL',
+  '1 thessalonians': '1TH', '1thessalonians': '1TH', '1thes': '1TH', '1 thes': '1TH', '1th': '1TH', '1 th': '1TH',
+  '2 thessalonians': '2TH', '2thessalonians': '2TH', '2thes': '2TH', '2 thes': '2TH', '2th': '2TH', '2 th': '2TH',
+  '1 timothy': '1TI', '1timothy': '1TI', '1tim': '1TI', '1 tim': '1TI', '1ti': '1TI', '1 ti': '1TI',
+  '2 timothy': '2TI', '2timothy': '2TI', '2tim': '2TI', '2 tim': '2TI', '2ti': '2TI', '2 ti': '2TI',
+  'titus': 'TIT', 'tit': 'TIT',
+  'philemon': 'PHM', 'phm': 'PHM', 'phlm': 'PHM',
+  'hebrews': 'HEB', 'heb': 'HEB',
+  'james': 'JAS', 'jas': 'JAS',
+  '1 peter': '1PE', '1peter': '1PE', '1pet': '1PE', '1 pet': '1PE', '1pe': '1PE',
+  '2 peter': '2PE', '2peter': '2PE', '2pet': '2PE', '2 pet': '2PE', '2pe': '2PE',
+  '1 john': '1JN', '1john': '1JN', '1jo': '1JN', '1 jo': '1JN', '1jn': '1JN',
+  '2 john': '2JN', '2john': '2JN', '2jo': '2JN', '2 jo': '2JN', '2jn': '2JN',
+  '3 john': '3JN', '3john': '3JN', '3jo': '3JN', '3 jo': '3JN', '3jn': '3JN',
+  'jude': 'JUD', 'jud': 'JUD',
+  'revelation': 'REV', 'revelations': 'REV', 'rev': 'REV',
+}
+
+function toApiBibleRef(passageRef) {
+  const normalized = passageRef.trim().replace(/\s*[–—]\s*/g, '-').replace(/\s+-\s+/g, '-')
+  // "Book Name Ch:V" or "Book Name Ch:V-EndV" or "Book Name Ch:V-EndCh:EndV"
+  const match = normalized.match(/^(.+?)\s+(\d+):(\d+)(?:-(?:(\d+):)?(\d+))?$/i)
+  if (!match) return null
+  const [, book, ch1, v1, endCh, endV] = match
+  const code = BOOK_MAP[book.toLowerCase().trim()]
+  if (!code) return null
+  const startId = `${code}.${ch1}.${v1}`
+  if (!endV) return startId
+  return `${startId}-${code}.${endCh ?? ch1}.${endV}`
+}
+
+async function fetchPassage(transId, passageRef) {
+  const t = TRANSLATIONS.find(t => t.id === transId)
+  if (t?.src === 'api-bible') {
+    if (!t.bibleId || !API_BIBLE_KEY) return { error: true }
+    const passageId = toApiBibleRef(passageRef)
+    if (!passageId) return { error: true }
+    const params = new URLSearchParams({
+      'content-type': 'html',
+      'include-notes': 'false',
+      'include-titles': 'false',
+      'include-chapter-numbers': 'false',
+      'include-verse-numbers': 'true',
+      'include-verse-spans': 'false',
+    })
+    const res = await fetch(
+      `https://rest.api.bible/v1/bibles/${t.bibleId}/passages/${passageId}?${params}`,
+      { headers: { 'api-key': API_BIBLE_KEY } }
+    )
+    if (!res.ok) return { error: true }
+    const json = await res.json()
+    return { content: json.data.content ?? '', copyright: json.data.copyright ?? '' }
+  }
+  // NET Bible via labs.bible.org
+  if (t?.src === 'bible-org') {
+    const ref = passageRef.replace(/\s+/g, '+')
+    const res = await fetch(`https://labs.bible.org/api/?passage=${ref}&type=json`)
+    if (!res.ok) return { error: true }
+    const verses = await res.json()
+    // Build HTML matching the API.Bible structure so the same renderer handles it
+    const content = verses.map(v =>
+      `<p class="p"><span class="v">${v.verse}</span>${v.text}</p>`
+    ).join('')
+    return {
+      content,
+      copyright: 'Scripture quoted by permission. Quotations designated (NET) are from the NET Bible® copyright ©1996, 2019 by Biblical Studies Press, L.L.C. http://netbible.com',
+    }
+  }
+
+  // Public-domain: bible-api.com
+  const ref = passageRef.replace(/\s+/g, '+')
+  const res = await fetch(`https://bible-api.com/${ref}?translation=${transId}`)
+  return await res.json()
+}
 
 export default function StudyViewer() {
   const { id } = useParams()
@@ -162,9 +292,7 @@ export default function StudyViewer() {
       fetchedRef.current.add(trans)
       setPassageLoading((prev) => ({ ...prev, [trans]: true }))
       try {
-        const ref = study.passage_ref.replace(/\s+/g, '+')
-        const res = await fetch(`https://bible-api.com/${ref}?translation=${trans}`)
-        const data = await res.json()
+        const data = await fetchPassage(trans, study.passage_ref)
         setPassages((prev) => ({ ...prev, [trans]: data }))
       } catch {
         setPassages((prev) => ({ ...prev, [trans]: { error: true } }))
@@ -184,9 +312,7 @@ export default function StudyViewer() {
       xrefFetchedRef.current.add(trans)
       setXrefLoading((prev) => ({ ...prev, [trans]: true }))
       try {
-        const ref = xrefStudy.passage_ref.replace(/\s+/g, '+')
-        const res = await fetch(`https://bible-api.com/${ref}?translation=${trans}`)
-        const data = await res.json()
+        const data = await fetchPassage(trans, xrefStudy.passage_ref)
         setXrefPassages((prev) => ({ ...prev, [trans]: data }))
       } catch {
         setXrefPassages((prev) => ({ ...prev, [trans]: { error: true } }))
@@ -323,15 +449,28 @@ export default function StudyViewer() {
             {data?.error && <p style={{ color: 'var(--error)', fontSize: '0.85rem' }}>Could not load this passage.</p>}
             {data && !data.error && (
               <div style={{ fontSize: '0.96rem', lineHeight: '1.9', color: 'var(--ink)', fontFamily: 'Georgia, serif' }}>
-                {data.verses?.map((v) => (
-                  <span key={`${v.chapter}-${v.verse}`}>
-                    <sup style={{ fontSize: '0.62em', fontWeight: 700, color: 'var(--gold)', marginRight: '1px', verticalAlign: 'super', lineHeight: 0 }}>
-                      {v.verse}
-                    </sup>
-                    {v.text.trim()}{' '}
-                  </span>
-                ))}
-                {!data.verses && data.text && <span>{data.text}</span>}
+                {data.content != null ? (
+                  <>
+                    <div className="api-bible-content" dangerouslySetInnerHTML={{ __html: data.content }} />
+                    {data.copyright && (
+                      <p style={{ fontSize: '0.68rem', color: 'var(--ink-soft)', marginTop: '10px', lineHeight: '1.5', fontStyle: 'italic' }}>
+                        {data.copyright}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {data.verses?.map((v) => (
+                      <span key={`${v.chapter}-${v.verse}`}>
+                        <sup style={{ fontSize: '0.62em', fontWeight: 700, color: 'var(--gold)', marginRight: '1px', verticalAlign: 'super', lineHeight: 0 }}>
+                          {v.verse}
+                        </sup>
+                        {v.text.trim()}{' '}
+                      </span>
+                    ))}
+                    {!data.verses && data.text && <span>{data.text}</span>}
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -638,13 +777,24 @@ export default function StudyViewer() {
                           {data?.error && <p style={{ color: 'var(--error)', fontSize: '0.85rem' }}>Could not load passage.</p>}
                           {data && !data.error && (
                             <div style={{ fontSize: '0.91rem', lineHeight: '1.8', color: 'var(--ink)', fontFamily: 'Georgia, serif' }}>
-                              {data.verses?.map((v) => (
-                                <span key={`${v.chapter}-${v.verse}`}>
-                                  <sup style={{ fontSize: '0.62em', fontWeight: 700, color: 'var(--gold)', marginRight: '1px', verticalAlign: 'super', lineHeight: 0 }}>{v.verse}</sup>
-                                  {v.text.trim()}{' '}
-                                </span>
-                              ))}
-                              {!data.verses && data.text && <span>{data.text}</span>}
+                              {data.content != null ? (
+                                <>
+                                  <div className="api-bible-content" dangerouslySetInnerHTML={{ __html: data.content }} />
+                                  {data.copyright && (
+                                    <p style={{ fontSize: '0.65rem', color: 'var(--ink-soft)', marginTop: '8px', lineHeight: '1.5', fontStyle: 'italic' }}>{data.copyright}</p>
+                                  )}
+                                </>
+                              ) : (
+                                <>
+                                  {data.verses?.map((v) => (
+                                    <span key={`${v.chapter}-${v.verse}`}>
+                                      <sup style={{ fontSize: '0.62em', fontWeight: 700, color: 'var(--gold)', marginRight: '1px', verticalAlign: 'super', lineHeight: 0 }}>{v.verse}</sup>
+                                      {v.text.trim()}{' '}
+                                    </span>
+                                  ))}
+                                  {!data.verses && data.text && <span>{data.text}</span>}
+                                </>
+                              )}
                             </div>
                           )}
                         </div>
@@ -838,13 +988,24 @@ export default function StudyViewer() {
                         {data?.error && <p style={{ color: 'var(--error)', fontSize: '0.85rem' }}>Could not load passage.</p>}
                         {data && !data.error && (
                           <div style={{ fontSize: '0.93rem', lineHeight: '1.85', color: 'var(--ink)', fontFamily: 'Georgia, serif' }}>
-                            {data.verses?.map((v) => (
-                              <span key={`${v.chapter}-${v.verse}`}>
-                                <sup style={{ fontSize: '0.62em', fontWeight: 700, color: 'var(--gold)', marginRight: '1px', verticalAlign: 'super', lineHeight: 0 }}>{v.verse}</sup>
-                                {v.text.trim()}{' '}
-                              </span>
-                            ))}
-                            {!data.verses && data.text && <span>{data.text}</span>}
+                            {data.content != null ? (
+                              <>
+                                <div className="api-bible-content" dangerouslySetInnerHTML={{ __html: data.content }} />
+                                {data.copyright && (
+                                  <p style={{ fontSize: '0.65rem', color: 'var(--ink-soft)', marginTop: '8px', lineHeight: '1.5', fontStyle: 'italic' }}>{data.copyright}</p>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                {data.verses?.map((v) => (
+                                  <span key={`${v.chapter}-${v.verse}`}>
+                                    <sup style={{ fontSize: '0.62em', fontWeight: 700, color: 'var(--gold)', marginRight: '1px', verticalAlign: 'super', lineHeight: 0 }}>{v.verse}</sup>
+                                    {v.text.trim()}{' '}
+                                  </span>
+                                ))}
+                                {!data.verses && data.text && <span>{data.text}</span>}
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
