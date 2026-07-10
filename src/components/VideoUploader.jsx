@@ -95,6 +95,8 @@ export default function VideoUploader({ studyTitle = 'study-video', onComplete, 
         const state = data.result?.status?.state
         if (state === 'ready') {
           const durationSeconds = data.result?.duration ?? null
+          // Fire captions in parallel with audio — no need to wait on it
+          fetch(`/api/stream/${uid}/captions`, { method: 'POST' }).catch(() => {})
           await triggerAudioExtraction(uid, durationSeconds)
           return
         }
